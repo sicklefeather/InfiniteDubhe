@@ -19,6 +19,7 @@ public sealed class Renderer : IDisposable
     private ComPtr<ID3D11Device> _device;
     private ComPtr<ID3D11DeviceContext> _context;
     private SpriteBatch? _spriteBatch;
+    private Texture2D? _debugTexture;
     private bool _initialized;
 
     public Camera Camera { get; }
@@ -40,6 +41,7 @@ public sealed class Renderer : IDisposable
         _device = (ComPtr<ID3D11Device>)native.Device;
         _context = (ComPtr<ID3D11DeviceContext>)native.Context;
         _spriteBatch = new SpriteBatch(_device, _context);
+        _debugTexture = CreateTexture(1, 1, new byte[] { 255, 255, 255, 255 });
         _initialized = true;
     }
 
@@ -58,6 +60,15 @@ public sealed class Renderer : IDisposable
         _spriteBatch.Begin(Camera);
         foreach (var r in renderables) r.Submit(_spriteBatch);
         _spriteBatch.End();
+
+        // 调试绘制：独立 pass，绘制在精灵之上。
+        if (_debugTexture is not null)
+        {
+            _spriteBatch.Begin(Camera);
+            Debug.Flush(_spriteBatch, _debugTexture);
+            _spriteBatch.End();
+        }
+        Debug.Clear();
     }
 
     public void Present() => _graphics.SwapBuffers();

@@ -15,8 +15,11 @@
     <ProjectReference Include="../../src/InfiniteDubhe.Platform.Windows/InfiniteDubhe.Platform.Windows.csproj" />
     <ProjectReference Include="../../src/InfiniteDubhe.Rendering/InfiniteDubhe.Rendering.csproj" />
     <ProjectReference Include="../../src/InfiniteDubhe.Scene/InfiniteDubhe.Scene.csproj" />
+    <ProjectReference Include="../../src/InfiniteDubhe.UI/InfiniteDubhe.UI.csproj" />
+    <ProjectReference Include="../../src/InfiniteDubhe.Physics/InfiniteDubhe.Physics.csproj" />
     <ProjectReference Include="../../src/InfiniteDubhe.Input/InfiniteDubhe.Input.csproj" />
     <ProjectReference Include="../../src/InfiniteDubhe.Resources/InfiniteDubhe.Resources.csproj" />
+    <ProjectReference Include="../../src/InfiniteDubhe.Audio/InfiniteDubhe.Audio.csproj" />
     <ProjectReference Include="../../src/InfiniteDubhe.Engine/InfiniteDubhe.Engine.csproj" />
   </ItemGroup>
 

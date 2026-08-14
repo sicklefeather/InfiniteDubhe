@@ -3,6 +3,7 @@ using InfiniteDubhe.Platform;
 using InfiniteDubhe.Rendering;
 using InfiniteDubhe.Resources;
 using InfiniteDubhe.Scene;
+using AudioFacade = InfiniteDubhe.Audio.Audio;
 using InputFacade = InfiniteDubhe.Input.Input;
 
 namespace InfiniteDubhe.Engine;
@@ -24,6 +25,8 @@ public sealed class GameHost
     public void Run(Game game)
     {
         ArgumentNullException.ThrowIfNull(game);
+        Coroutines.Global.StopAll();   // 重置全局协程，避免多次 Run 残留
+        Tween.StopAll();               // 重置全局补间
 
         var window = _platform.CreateWindow(game.Config);
         var graphics = _platform.CreateGraphicsContext(window);
@@ -49,6 +52,7 @@ public sealed class GameHost
         {
             window.Initialize();      // 触发 Load：创建图形设备 + 输入设备
             renderer.Initialize();    // 设备就绪后创建 SpriteBatch 等 GPU 资源
+            AudioFacade.Initialize(); // 音频子系统（OpenAL 未安装时静默降级）
 
             game.OnInitialize();
             game.OnLoadContent();
@@ -75,11 +79,15 @@ public sealed class GameHost
                 {
                     sceneManager.FixedUpdate();
                     game.OnFixedUpdate(Time.FixedDeltaTime);
+                    Coroutines.Global.FixedUpdate();
                     accumulator -= Time.FixedDeltaTime;
                 }
 
                 sceneManager.Update();
                 game.OnUpdate(Time.ScaledDeltaTime);
+                Coroutines.Global.Update(Time.ScaledDeltaTime);
+                Tween.Update(Time.ScaledDeltaTime);
+                AudioFacade.Update(Time.ScaledDeltaTime);
 
                 renderer.Clear();
                 game.OnRender();
@@ -97,6 +105,7 @@ public sealed class GameHost
         }
         finally
         {
+            AudioFacade.Shutdown();
             (renderer as IDisposable)?.Dispose();
             (graphics as IDisposable)?.Dispose();
             (input as IDisposable)?.Dispose();
