@@ -14,12 +14,19 @@
     <ProjectReference Include="../../src/InfiniteDubhe.Platform/InfiniteDubhe.Platform.csproj" />
     <ProjectReference Include="../../src/InfiniteDubhe.Platform.Windows/InfiniteDubhe.Platform.Windows.csproj" />
     <ProjectReference Include="../../src/InfiniteDubhe.Rendering/InfiniteDubhe.Rendering.csproj" />
+    <ProjectReference Include="../../src/InfiniteDubhe.Scene/InfiniteDubhe.Scene.csproj" />
+    <ProjectReference Include="../../src/InfiniteDubhe.Input/InfiniteDubhe.Input.csproj" />
+    <ProjectReference Include="../../src/InfiniteDubhe.Resources/InfiniteDubhe.Resources.csproj" />
     <ProjectReference Include="../../src/InfiniteDubhe.Engine/InfiniteDubhe.Engine.csproj" />
   </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging" Version="10.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="10.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="Content/**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -16,6 +16,12 @@ public interface IInputSource
 
     bool IsMouseButtonDown(MouseButton button);
 
+    /// <summary>鼠标键是否在本帧刚按下（边沿触发）。</summary>
+    bool IsMouseButtonPressed(MouseButton button);
+
+    /// <summary>本帧滚轮累计值（正值向上）。</summary>
+    float MouseWheel { get; }
+
     /// <summary>每帧调用，推进瞬态（边沿触发）状态。</summary>
     void Update();
 }

@@ -4,11 +4,15 @@ using Silk.NET.Input;
 
 namespace InfiniteDubhe.Platform.Windows;
 
-/// <summary>键盘输入源（事件驱动）。鼠标随 M1 扩展。</summary>
+/// <summary>键盘 + 鼠标输入源（事件驱动）。手柄/触摸随 M2+ 扩展。</summary>
 public sealed class WindowsInputSource : IInputSource, IDisposable
 {
     private readonly HashSet<InfiniteDubhe.Core.Key> _held = new();
     private readonly HashSet<InfiniteDubhe.Core.Key> _pressed = new();
+    private readonly HashSet<InfiniteDubhe.Core.MouseButton> _mouseHeld = new();
+    private readonly HashSet<InfiniteDubhe.Core.MouseButton> _mousePressed = new();
+    private Vector2 _mousePos;
+    private float _mouseWheel;
     private IInputContext? _input;
 
     public WindowsInputSource(WindowsWindow window)
@@ -18,20 +22,47 @@ public sealed class WindowsInputSource : IInputSource, IDisposable
 
     public bool IsKeyDown(InfiniteDubhe.Core.Key key) => _held.Contains(key);
     public bool IsKeyPressed(InfiniteDubhe.Core.Key key) => _pressed.Contains(key);
-    public Vector2 MousePosition => Vector2.Zero;                          // M1 扩展
-    public bool IsMouseButtonDown(InfiniteDubhe.Core.MouseButton button) => false; // M1 扩展
+    public Vector2 MousePosition => _mousePos;
+    public bool IsMouseButtonDown(InfiniteDubhe.Core.MouseButton button) => _mouseHeld.Contains(button);
+    public bool IsMouseButtonPressed(InfiniteDubhe.Core.MouseButton button) => _mousePressed.Contains(button);
+    public float MouseWheel => _mouseWheel;
 
-    public void Update() => _pressed.Clear();
+    public void Update()
+    {
+        _pressed.Clear();
+        _mousePressed.Clear();
+        _mouseWheel = 0f;
+    }
 
     public void Dispose() => _input?.Dispose();
 
     private void Initialize(WindowsWindow window)
     {
         _input = window.Silk.CreateInput();
+
         foreach (var keyboard in _input.Keyboards)
         {
             keyboard.KeyDown += OnKeyDown;
             keyboard.KeyUp += OnKeyUp;
+        }
+
+        foreach (var mouse in _input.Mice)
+        {
+            mouse.MouseMove += (_, pos) => _mousePos = new Vector2(pos.X, pos.Y);
+            mouse.MouseDown += (_, button) =>
+            {
+                var mapped = Map(button);
+                if (mapped is null) return;
+                _mouseHeld.Add(mapped.Value);
+                _mousePressed.Add(mapped.Value);
+            };
+            mouse.MouseUp += (_, button) =>
+            {
+                var mapped = Map(button);
+                if (mapped is null) return;
+                _mouseHeld.Remove(mapped.Value);
+            };
+            mouse.Scroll += (_, wheel) => _mouseWheel += wheel.Y;
         }
     }
 
@@ -49,6 +80,14 @@ public sealed class WindowsInputSource : IInputSource, IDisposable
         if (mapped == InfiniteDubhe.Core.Key.Unknown) return;
         _held.Remove(mapped);
     }
+
+    private static InfiniteDubhe.Core.MouseButton? Map(MouseButton button) => button switch
+    {
+        MouseButton.Left => InfiniteDubhe.Core.MouseButton.Left,
+        MouseButton.Right => InfiniteDubhe.Core.MouseButton.Right,
+        MouseButton.Middle => InfiniteDubhe.Core.MouseButton.Middle,
+        _ => null,
+    };
 
     private static InfiniteDubhe.Core.Key Map(Key key) => key switch
     {

@@ -10,7 +10,7 @@ Log.SetFactory(loggerFactory);
 
 var config = new GameConfig
 {
-    Title = "InfiniteDubhe Sandbox (M0)",
+    Title = "InfiniteDubhe Sandbox (M1)",
     Width = 1280,
     Height = 720,
     VSync = true,

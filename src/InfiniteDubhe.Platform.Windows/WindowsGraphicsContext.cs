@@ -55,6 +55,8 @@ public sealed unsafe class WindowsGraphicsContext : IGraphicsContext, IDisposabl
 
     public void MakeCurrent() { /* 单线程 MVP：无需绑定 */ }
 
+    public NativeGraphicsContext Native => new(_device, _context, _swapchain);
+
     public void Dispose()
     {
         _factory.Dispose();

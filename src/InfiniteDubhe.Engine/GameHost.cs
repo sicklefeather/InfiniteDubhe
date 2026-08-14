@@ -1,16 +1,20 @@
 using InfiniteDubhe.Core;
 using InfiniteDubhe.Platform;
 using InfiniteDubhe.Rendering;
+using InfiniteDubhe.Resources;
+using InfiniteDubhe.Scene;
+using InputFacade = InfiniteDubhe.Input.Input;
 
 namespace InfiniteDubhe.Engine;
 
 /// <summary>
-/// 引擎运行时：装配平台/渲染并驱动主循环（固定步长 + 可变渲染）。
-/// 位于 Engine（依赖 Core + Platform + Rendering），使 Core 保持零平台依赖。
+/// 引擎运行时：装配平台/渲染/场景/资源/输入并驱动主循环（固定步长 + 可变渲染）。
+/// 位于 Engine（依赖 Core + Platform + Rendering + Scene + Input + Resources），使 Core 保持零平台依赖。
 /// </summary>
 public sealed class GameHost
 {
     private readonly IPlatformBootstrap _platform;
+    private readonly List<IRenderable> _renderables = new();
 
     public GameHost(IPlatformBootstrap platform)
     {
@@ -25,13 +29,26 @@ public sealed class GameHost
         var graphics = _platform.CreateGraphicsContext(window);
         var input = _platform.CreateInput(window);
         var clock = _platform.CreateClock();
-        var renderer = new Renderer(graphics);
+        var fileSystem = _platform.CreateFileSystem();
+
+        var renderer = new Renderer(graphics, game.Config.Width, game.Config.Height);
+        var sceneManager = new SceneManager();
+        var resources = new ResourceManager();
+        resources.RegisterLoader<ITexture>(new TextureLoader(fileSystem, (w, h, rgba) => renderer.CreateTexture(w, h, rgba)));
+
+        // 注入全局门面与子系统访问入口。
+        InputFacade.Source = input;
+        game.Services = new ServiceLocator()
+            .Add(sceneManager)
+            .Add(resources)
+            .Add(renderer);
 
         Time.FixedDeltaTime = game.Config.FixedTimestep;
 
         try
         {
-            window.Initialize();
+            window.Initialize();      // 触发 Load：创建图形设备 + 输入设备
+            renderer.Initialize();    // 设备就绪后创建 SpriteBatch 等 GPU 资源
 
             game.OnInitialize();
             game.OnLoadContent();
@@ -39,10 +56,10 @@ public sealed class GameHost
             var accumulator = 0f;
             while (!window.IsClosing)
             {
-                input.Update();
+                input.Update();        // 推进边沿触发状态
                 window.ProcessEvents();
 
-                // Esc 退出（M0 内置，关闭按钮经 IsClosing 处理）。
+                // Esc 退出（M0 内置；关闭按钮经 IsClosing 处理）。
                 if (input.IsKeyPressed(Key.Escape))
                 {
                     break;
@@ -56,15 +73,23 @@ public sealed class GameHost
                 var iterations = 0;
                 while (accumulator >= Time.FixedDeltaTime && iterations++ < 100)
                 {
+                    sceneManager.FixedUpdate();
                     game.OnFixedUpdate(Time.FixedDeltaTime);
                     accumulator -= Time.FixedDeltaTime;
                 }
 
+                sceneManager.Update();
                 game.OnUpdate(Time.ScaledDeltaTime);
 
                 renderer.Clear();
                 game.OnRender();
+
+                _renderables.Clear();
+                sceneManager.CollectRenderables(_renderables);
+                renderer.Draw(_renderables);
                 renderer.Present();
+
+                sceneManager.EndOfFrame();
             }
 
             game.OnUnloadContent();
@@ -72,9 +97,25 @@ public sealed class GameHost
         }
         finally
         {
+            (renderer as IDisposable)?.Dispose();
             (graphics as IDisposable)?.Dispose();
             (input as IDisposable)?.Dispose();
             (window as IDisposable)?.Dispose();
         }
+    }
+
+    /// <summary>最小服务定位器：按类型解析子系统，供 <see cref="Game.GetService{T}"/> 使用。</summary>
+    private sealed class ServiceLocator : IServiceProvider
+    {
+        private readonly Dictionary<Type, object> _services = new();
+
+        public ServiceLocator Add<T>(T instance) where T : class
+        {
+            _services[typeof(T)] = instance;
+            return this;
+        }
+
+        public object? GetService(Type serviceType)
+            => _services.TryGetValue(serviceType, out var service) ? service : null;
     }
 }

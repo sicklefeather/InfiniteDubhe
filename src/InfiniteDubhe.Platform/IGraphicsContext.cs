@@ -13,4 +13,7 @@ public interface IGraphicsContext
 
     /// <summary>绑定上下文（多线程渲染时用；单线程 MVP 为空操作）。</summary>
     void MakeCurrent();
+
+    /// <summary>后端图形句柄（供 Rendering 层进行纹理/缓冲/着色器操作）。</summary>
+    NativeGraphicsContext Native { get; }
 }

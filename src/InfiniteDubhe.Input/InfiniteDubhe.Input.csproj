@@ -5,16 +5,12 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <RootNamespace>InfiniteDubhe.Engine</RootNamespace>
+    <RootNamespace>InfiniteDubhe.Input</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
     <ProjectReference Include="../InfiniteDubhe.Core/InfiniteDubhe.Core.csproj" />
     <ProjectReference Include="../InfiniteDubhe.Platform/InfiniteDubhe.Platform.csproj" />
-    <ProjectReference Include="../InfiniteDubhe.Rendering/InfiniteDubhe.Rendering.csproj" />
-    <ProjectReference Include="../InfiniteDubhe.Scene/InfiniteDubhe.Scene.csproj" />
-    <ProjectReference Include="../InfiniteDubhe.Input/InfiniteDubhe.Input.csproj" />
-    <ProjectReference Include="../InfiniteDubhe.Resources/InfiniteDubhe.Resources.csproj" />
   </ItemGroup>
 
 </Project>

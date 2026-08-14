@@ -13,6 +13,12 @@ public abstract class Game
 
     public GameConfig Config { get; }
 
+    /// <summary>子系统访问入口（由引擎运行时在 <see cref="Initialize"/> 前注入）。</summary>
+    public IServiceProvider? Services { get; internal set; }
+
+    /// <summary>从 <see cref="Services"/> 解析子系统。</summary>
+    protected T? GetService<T>() where T : class => Services?.GetService(typeof(T)) as T;
+
     protected virtual void Initialize() { }
     protected virtual void LoadContent() { }
     protected virtual void Update(float dt) { }
