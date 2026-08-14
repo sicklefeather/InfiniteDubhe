@@ -1,0 +1,21 @@
+# Build results
+[Bb]in/
+[Oo]bj/
+*.user
+
+# Visual Studio
+.vs/
+*.suo
+*.ncb
+*.userprefs
+
+# Rider
+.idea/
+
+# NuGet
+*.nupkg
+packages/
+
+# Test results
+[Tt]est[Rr]esults/
+*.trx

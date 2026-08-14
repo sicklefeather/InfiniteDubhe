@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <RootNamespace>InfiniteDubhe.Engine</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="../InfiniteDubhe.Core/InfiniteDubhe.Core.csproj" />
+    <ProjectReference Include="../InfiniteDubhe.Platform/InfiniteDubhe.Platform.csproj" />
+    <ProjectReference Include="../InfiniteDubhe.Rendering/InfiniteDubhe.Rendering.csproj" />
+  </ItemGroup>
+
+</Project>
