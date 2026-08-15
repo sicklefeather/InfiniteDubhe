@@ -1,4 +1,5 @@
 using System.Numerics;
+using System.Runtime.CompilerServices;
 using Silk.NET.Core.Native;
 using Silk.NET.Direct3D11;
 using InfiniteDubhe.Core;
@@ -54,7 +55,22 @@ public sealed class Renderer : IDisposable
     public void Clear(Color color) => _graphics.Clear(color);
 
     /// <summary>提交场景可渲染对象（收集指令 → 批处理 → 绘制）。</summary>
-    public void Draw(IReadOnlyList<IRenderable> renderables)
+    /// <summary>创建离屏渲染目标（编辑器视口等用）。</summary>
+    public RenderTarget2D CreateRenderTarget(int width, int height)
+        => new(_device, width, height);
+
+    /// <summary>提交场景可渲染对象到后备缓冲（收集指令 → 批处理 → 绘制）。</summary>
+    public void Draw(IReadOnlyList<IRenderable> renderables) => DrawCore(renderables);
+
+    /// <summary>提交场景可渲染对象到离屏渲染目标（视口用）。</summary>
+    public void Draw(IReadOnlyList<IRenderable> renderables, RenderTarget2D target)
+    {
+        ArgumentNullException.ThrowIfNull(target);
+        BindRenderTarget(target);
+        DrawCore(renderables);
+    }
+
+    private void DrawCore(IReadOnlyList<IRenderable> renderables)
     {
         if (!_initialized || _spriteBatch is null) return;
         _spriteBatch.Begin(Camera);
@@ -69,6 +85,14 @@ public sealed class Renderer : IDisposable
             _spriteBatch.End();
         }
         Debug.Clear();
+    }
+
+    private void BindRenderTarget(RenderTarget2D target)
+    {
+        var rtv = target.Rtv;
+        _context.OMSetRenderTargets(1, ref rtv, ref Unsafe.NullRef<ID3D11DepthStencilView>());
+        var viewport = new Viewport(0, 0, target.Width, target.Height, 0, 1);
+        _context.RSSetViewports(1, in viewport);
     }
 
     public void Present() => _graphics.SwapBuffers();
