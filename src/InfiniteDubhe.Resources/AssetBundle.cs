@@ -18,22 +18,23 @@ public sealed class AssetBundle
     /// <summary>包内资源路径（相对资源根的 '/' 分隔路径）。</summary>
     public IReadOnlyCollection<string> Paths => _entries.Keys;
 
-    /// <summary>把一个目录下所有文件打包到 <paramref name="outputPath"/>。</summary>
-    public static void Pack(string rootDir, string outputPath)
+    /// <summary>把一个目录下所有文件打包到 <paramref name="outputPath"/>（可用 <paramref name="filter"/> 排除文件）。</summary>
+    public static void Pack(string rootDir, string outputPath, Func<string, bool>? filter = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(rootDir);
         ArgumentException.ThrowIfNullOrWhiteSpace(outputPath);
-        PackInMemory(rootDir).WriteToFile(outputPath);
+        PackInMemory(rootDir, filter).WriteToFile(outputPath);
     }
 
-    /// <summary>打包目录到内存（构建工具/测试用）。</summary>
-    public static AssetBundle PackInMemory(string rootDir)
+    /// <summary>打包目录到内存（构建工具/测试用）。<paramref name="filter"/> 返回 false 的文件被排除。</summary>
+    public static AssetBundle PackInMemory(string rootDir, Func<string, bool>? filter = null)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(rootDir);
         var bundle = new AssetBundle();
         foreach (var file in Directory.EnumerateFiles(rootDir, "*.*", SearchOption.AllDirectories))
         {
             var relative = Path.GetRelativePath(rootDir, file).Replace('\\', '/');
+            if (filter is not null && !filter(relative)) continue;
             bundle._entries[relative] = File.ReadAllBytes(file);
         }
         return bundle;
