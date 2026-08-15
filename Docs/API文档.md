@@ -499,6 +499,22 @@ public sealed class SceneLoader
 
 > 场景文件为扁平 DTO（GUID 父子引用 + 组件类型全名 + 公开可写属性值）；纹理存相对路径，加载时经 `ResourceManager.Load<ITexture>` 重连。组件经反射重建（`AssemblyQualifiedName` + 公开可写属性），统一覆盖内置与自定义组件；`SpriteAnimator` 片段与 `Canvas` UI 树暂不覆盖。
 
+### 10.4 AssetBundle（资源包，M3）
+
+```csharp
+public sealed class AssetBundle
+{
+    public static void Pack(string rootDir, string outputPath);   // 打包目录 → .dubhe 文件
+    public static AssetBundle PackInMemory(string rootDir);        // 打包到内存（构建/测试用）
+    public static AssetBundle Load(string path);                   // 从包文件加载
+    public IReadOnlyCollection<string> Paths { get; }              // 包内资源路径
+    public bool Contains(string path);
+    public IFileSystem CreateFileSystem();                         // 作为 IFileSystem 供引擎使用
+}
+```
+
+> 把资源目录打成单个 `.dubhe` 包；`CreateFileSystem()` 返回的 `IFileSystem` 可无缝替换磁盘文件系统（`ResourceManager`/`SceneLoader` 直接复用），游戏发布时用包替代松散的 `Content/` 目录。
+
 ---
 
 ## 11. InfiniteDubhe.Physics
