@@ -191,6 +191,7 @@ float4 ps_main(vs_out input) : SV_TARGET {
         var srv = ((Texture2D)texture).Srv;
         _context.PSSetShaderResources(0, 1, ref srv);
         _context.DrawIndexed((uint)indexCount, 0, 0);
+        Profiler.RecordDrawCall();
 
         vb.Dispose();
         ib.Dispose();

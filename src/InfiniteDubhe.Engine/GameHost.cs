@@ -60,6 +60,8 @@ public sealed class GameHost
             var accumulator = 0f;
             while (!window.IsClosing)
             {
+                Profiler.BeginFrame();
+
                 input.Update();        // 推进边沿触发状态
                 window.ProcessEvents();
 
@@ -75,6 +77,7 @@ public sealed class GameHost
                 // 固定步长累积（缩放，TimeScale = 0 时暂停）。
                 accumulator += Time.ScaledDeltaTime;
                 var iterations = 0;
+                Profiler.BeginPhase(ProfilerPhase.FixedUpdate);
                 while (accumulator >= Time.FixedDeltaTime && iterations++ < 100)
                 {
                     sceneManager.FixedUpdate();
@@ -82,13 +85,17 @@ public sealed class GameHost
                     Coroutines.Global.FixedUpdate();
                     accumulator -= Time.FixedDeltaTime;
                 }
+                Profiler.EndPhase(ProfilerPhase.FixedUpdate);
 
+                Profiler.BeginPhase(ProfilerPhase.Update);
                 sceneManager.Update();
                 game.OnUpdate(Time.ScaledDeltaTime);
                 Coroutines.Global.Update(Time.ScaledDeltaTime);
                 Tween.Update(Time.ScaledDeltaTime);
                 AudioFacade.Update(Time.ScaledDeltaTime);
+                Profiler.EndPhase(ProfilerPhase.Update);
 
+                Profiler.BeginPhase(ProfilerPhase.Render);
                 renderer.Clear();
                 game.OnRender();
 
@@ -96,6 +103,9 @@ public sealed class GameHost
                 sceneManager.CollectRenderables(_renderables);
                 renderer.Draw(_renderables);
                 renderer.Present();
+                Profiler.EndPhase(ProfilerPhase.Render);
+
+                Profiler.EndFrame();
 
                 sceneManager.EndOfFrame();
             }
