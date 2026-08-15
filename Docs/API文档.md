@@ -304,8 +304,10 @@ public sealed class Scene
 }
 public sealed class SceneManager
 {
-    public Scene? Current { get; }
-    public void Load(Scene scene); // 切换场景（卸载旧、激活新）
+    public Scene? Global { get; }           // 常驻全局场景（跨关卡存活的对象）
+    public Scene? Current { get; }          // 当前关卡场景
+    public void SetGlobal(Scene? scene);    // 设置全局场景（传 null 清除）
+    public void Load(Scene? scene);         // 切换关卡场景（传 null 清除）
 }
 ```
 
