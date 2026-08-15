@@ -26,6 +26,9 @@ public sealed class SceneLoader
         return _serializer.Deserialize(reader.ReadToEnd());
     }
 
+    /// <summary>指定路径的场景文件是否存在。</summary>
+    public bool Exists(string path) => _fileSystem.Exists(path);
+
     public void SaveScene(SceneType scene, string path)
     {
         ArgumentNullException.ThrowIfNull(scene);
