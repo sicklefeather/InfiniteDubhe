@@ -30,6 +30,9 @@ public sealed class SceneLoader
     {
         ArgumentNullException.ThrowIfNull(scene);
         var json = _serializer.Serialize(scene);
-        File.WriteAllText(_fileSystem.GetFullPath(path), json);
+        var fullPath = _fileSystem.GetFullPath(path);
+        var dir = Path.GetDirectoryName(fullPath);
+        if (!string.IsNullOrEmpty(dir)) Directory.CreateDirectory(dir);
+        File.WriteAllText(fullPath, json);
     }
 }
