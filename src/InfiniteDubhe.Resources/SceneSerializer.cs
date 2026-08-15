@@ -203,7 +203,8 @@ public sealed class SceneSerializer
                 {
                     // 新格式：{ guid, path }，优先按 GUID 解析（改名/移动后仍能定位）。
                     var reference = pv.Value.Deserialize<AssetReference>(_options);
-                    path = _guidResolver?.GetPath(reference.Guid) ?? reference.Path;
+                    if (reference is not null)
+                        path = _guidResolver?.GetPath(reference.Guid) ?? reference.Path;
                 }
                 else if (pv.Value.ValueKind == JsonValueKind.String)
                 {
