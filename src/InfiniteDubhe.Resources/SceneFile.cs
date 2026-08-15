@@ -49,6 +49,23 @@ public sealed class ComponentData
     public string TypeName { get; set; } = "";
 
     public List<PropertyValue> Properties { get; set; } = new();
+
+    /// <summary>UI 元素树（仅 <c>Canvas</c> 组件使用）：根元素列表，父组件按类型反射重建。</summary>
+    public List<UiElementData> UiElements { get; set; } = new();
+}
+
+/// <summary>
+/// UI 元素树节点（Canvas 的 Roots 树）。反射式：类型全名 + 可写属性 + 子元素，
+/// 不依赖 UI 程序集即可覆盖 Panel/Image/Text/Button 等元素类型。
+/// </summary>
+public sealed class UiElementData
+{
+    /// <summary>元素类型 AssemblyQualifiedName，用于反序列化时按类型重建。</summary>
+    public string TypeName { get; set; } = "";
+
+    public List<PropertyValue> Properties { get; set; } = new();
+
+    public List<UiElementData> Children { get; set; } = new();
 }
 
 /// <summary>单个属性值。值为 <see cref="JsonElement"/>，反序列化时由反射按目标类型转换。</summary>

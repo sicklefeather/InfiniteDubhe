@@ -19,6 +19,7 @@
     <ProjectReference Include="../../src/InfiniteDubhe.Scene/InfiniteDubhe.Scene.csproj" />
     <ProjectReference Include="../../src/InfiniteDubhe.Resources/InfiniteDubhe.Resources.csproj" />
     <ProjectReference Include="../../src/InfiniteDubhe.Physics/InfiniteDubhe.Physics.csproj" />
+    <ProjectReference Include="../../src/InfiniteDubhe.UI/InfiniteDubhe.UI.csproj" />
   </ItemGroup>
 
 </Project>

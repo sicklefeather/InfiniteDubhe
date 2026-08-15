@@ -2,6 +2,7 @@ using System.Numerics;
 using InfiniteDubhe.Core;
 using InfiniteDubhe.Physics;
 using InfiniteDubhe.Scene;
+using InfiniteDubhe.UI;
 using Xunit;
 using SceneType = InfiniteDubhe.Scene.Scene;
 
@@ -139,6 +140,67 @@ public sealed class SceneSerializerTests
         var sr = restored.RootObjects.Single().GetComponent<SpriteRenderer>()!;
         Assert.NotNull(sr.Texture);
         Assert.Equal("tex/a_renamed.png", resources.GetPath(sr.Texture)); // 经 GUID 解析到新路径
+    }
+
+    [Fact]
+    public void RoundTrip_PreservesCanvasUiTree()
+    {
+        var resources = new ResourceManager();
+        resources.RegisterLoader<ITexture>(new FakeTextureLoader());
+        var serializer = new SceneSerializer(resources);
+
+        var scene = new SceneType("UI");
+        var canvas = scene.CreateObject("Canvas").AddComponent<Canvas>();
+
+        // 根 1：Panel（含 1 个 Text 子元素）。
+        var panel = canvas.Add(new Panel
+        {
+            Size = new Vector2(240f, 120f),
+            Position = new Vector2(16f, 64f),
+            Color = Color.FromRgb(22, 26, 40, 220),
+            Layout = LayoutDirection.Vertical,
+            Spacing = 8f,
+        });
+        panel.AddChild(new Text("Score: 100", 2f) { Color = Color.White });
+
+        // 根 2：Button（自动文本标签不应被重复序列化）。
+        canvas.Add(new Button("Play", 2f)
+        {
+            Size = new Vector2(160f, 40f),
+            BackgroundColor = Color.FromRgb(70, 70, 96),
+        });
+
+        // 根 3：Image（纹理走路径重连）。
+        canvas.Add(new Image { Texture = resources.Load<ITexture>("tex/coin.png"), Size = new Vector2(64f, 64f) });
+
+        var restored = serializer.Deserialize(serializer.Serialize(scene));
+
+        var restoredCanvas = Assert.IsType<Canvas>(Assert.Single(restored.RootObjects).GetComponent<Canvas>());
+        Assert.Equal(3, restoredCanvas.Roots.Count);
+
+        // Panel + 子 Text。
+        var restoredPanel = Assert.IsType<Panel>(restoredCanvas.Roots[0]);
+        Assert.Equal(new Vector2(240f, 120f), restoredPanel.Size);
+        Assert.Equal(new Vector2(16f, 64f), restoredPanel.Position);
+        Assert.Equal(Color.FromRgb(22, 26, 40, 220), restoredPanel.Color);
+        Assert.Equal(LayoutDirection.Vertical, restoredPanel.Layout);
+        Assert.Equal(8f, restoredPanel.Spacing);
+        var restoredText = Assert.IsType<Text>(Assert.Single(restoredPanel.Children));
+        Assert.Equal("Score: 100", restoredText.Content);
+        Assert.Equal(2f, restoredText.Scale);
+
+        // Button：标签未重复（仍只有 1 个自动标签子元素），属性经 Label/BackgroundColor 承载。
+        var restoredButton = Assert.IsType<Button>(restoredCanvas.Roots[1]);
+        Assert.Equal("Play", restoredButton.Label);
+        Assert.Equal(new Vector2(160f, 40f), restoredButton.Size);
+        Assert.Equal(Color.FromRgb(70, 70, 96), restoredButton.BackgroundColor);
+        Assert.Single(restoredButton.Children);
+
+        // Image：纹理路径重连。
+        var restoredImage = Assert.IsType<Image>(restoredCanvas.Roots[2]);
+        Assert.NotNull(restoredImage.Texture);
+        Assert.Equal("tex/coin.png", resources.GetPath(restoredImage.Texture!));
+        Assert.Equal(new Vector2(64f, 64f), restoredImage.Size);
     }
 
     private sealed class FakeGuidResolver : IAssetGuidResolver

@@ -33,6 +33,9 @@ public sealed class Text : UIElement
         Color = Color.White;
     }
 
+    /// <summary>无参构造（供序列化等按类型反射重建）。</summary>
+    public Text() : this("", 1f) { }
+
     protected override Vector2 MeasureSelf()
         => _scale <= 0f
             ? Vector2.Zero

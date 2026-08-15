@@ -47,7 +47,10 @@ public sealed class Canvas : Component, IRenderable
     }
 
     /// <summary>添加根元素。</summary>
-    public T Add<T>(T element) where T : UIElement
+    public T Add<T>(T element) where T : UIElement => (T)AddRoot(element);
+
+    /// <summary>以 <see cref="UIElement"/> 基类类型添加根元素（供序列化等按类型反射重建时调用）。</summary>
+    public UIElement AddRoot(UIElement element)
     {
         ArgumentNullException.ThrowIfNull(element);
         _roots.Add(element);
