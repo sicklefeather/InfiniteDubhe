@@ -486,9 +486,15 @@ public sealed class TextureLoader : IResourceLoader<ITexture>   // StbImageSharp
 ```csharp
 public sealed class SceneSerializer
 {
-    public SceneSerializer(ResourceManager resources);
+    public SceneSerializer(ResourceManager resources, IAssetGuidResolver? guidResolver = null);
     public string Serialize(Scene scene);      // 活对象 → SceneFile → JSON
     public Scene Deserialize(string json);     // JSON → SceneFile → 活对象 + 引用重连
+}
+
+public interface IAssetGuidResolver
+{
+    Guid GetGuid(string path);                 // 取路径对应 GUID（无则创建 .meta）
+    string? GetPath(Guid guid);                // 按 GUID 解析当前路径
 }
 
 public sealed class SceneLoader
@@ -500,7 +506,7 @@ public sealed class SceneLoader
 }
 ```
 
-> 场景文件为扁平 DTO（GUID 父子引用 + 组件类型全名 + 公开可写属性值）；纹理存相对路径，加载时经 `ResourceManager.Load<ITexture>` 重连。组件经反射重建（`AssemblyQualifiedName` + 公开可写属性），统一覆盖内置与自定义组件；`SpriteAnimator` 片段与 `Canvas` UI 树暂不覆盖。
+> 场景文件为扁平 DTO（GUID 父子引用 + 组件类型全名 + 公开可写属性值）；纹理存 **GUID + 相对路径**（提供 `IAssetGuidResolver` 时以 GUID 主引用，改名/移动后经 GUID 重连；无解析器则退化为纯路径）。组件经反射重建（`AssemblyQualifiedName` + 公开可写属性），统一覆盖内置与自定义组件；`SpriteAnimator` 片段与 `Canvas` UI 树暂不覆盖。
 
 ### 10.4 AssetBundle（资源包，M3）
 
