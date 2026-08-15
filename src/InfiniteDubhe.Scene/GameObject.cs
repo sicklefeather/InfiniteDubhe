@@ -45,6 +45,15 @@ public sealed class GameObject
         return component;
     }
 
+    /// <summary>移除指定组件并触发其销毁回调（供编辑器移除组件时用）。</summary>
+    internal bool RemoveComponent(Component component)
+    {
+        if (component is null || component.GameObject != this) return false;
+        if (!_components.Remove(component)) return false;
+        component.DoOnDestroy();
+        return true;
+    }
+
     public T? GetComponent<T>() where T : Component
         => _components.OfType<T>().FirstOrDefault();
 
