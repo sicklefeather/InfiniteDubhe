@@ -220,6 +220,17 @@ public static class Easing { public static float Apply(Ease ease, float t); }
 | `SpriteDrawCommand`（struct） | `Texture/SourceRect/Position/Rotation/Origin/Scale/Color/Effects/Layer/LayerDepth` | 单条绘制指令 |
 | `ISerializer` | `Serialize<T>`、`Deserialize<T>`、`Deserialize(json, type)` | 序列化门面 |
 
+### 4.10 编辑器特性标注
+
+供编辑器 Inspector 使用，对游戏运行时零影响：
+
+| 类型 | 说明 |
+|------|------|
+| `HideInInspectorAttribute` | 标记属性不显示在 Inspector |
+| `RangeAttribute(min, max)` | 数值滑杆范围 |
+| `HeaderAttribute(label)` | 属性分组标题 |
+| `TooltipAttribute(text)` | 属性悬停提示 |
+
 ---
 
 ## 5. InfiniteDubhe.Engine
@@ -352,8 +363,10 @@ public sealed class SpriteAnimator : Component
 | `ClearColor` | 清屏色，默认 CornflowerBlue |
 | `Initialize()` | 获取后端句柄并创建 GPU 资源（由 GameHost 调用） |
 | `CreateTexture(width, height, rgba)` | 从 RGBA 字节创建纹理（程序化纹理/上传） |
+| `CreateRenderTarget(width, height)` | 创建离屏渲染目标（编辑器视口等用） |
 | `Clear(color)` | 清屏 |
-| `Draw(IReadOnlyList<IRenderable>)` | 收集指令 → 批处理 → 绘制 |
+| `Draw(IReadOnlyList<IRenderable>)` | 收集指令 → 批处理 → 绘制（到后备缓冲） |
+| `Draw(renderables, RenderTarget2D)` | 渲染到离屏目标（视口） |
 | `Present()` | 提交渲染帧 |
 
 ### 8.2 Camera
@@ -380,6 +393,18 @@ public sealed class Texture2D : ITexture, IDisposable { public int Width { get; 
 ```
 
 > 使用者一般不必直接接触 `SpriteBatch`/`Texture2D`——通过 `Renderer.CreateTexture` 与 `SpriteRenderer` 即可；`Renderer.Draw` 内部完成批处理。
+
+### 8.4 RenderTarget2D
+
+```csharp
+public sealed class RenderTarget2D : ITexture, IDisposable
+{
+    public int Width { get; }
+    public int Height { get; }
+}
+```
+
+> 离屏渲染目标：`Renderer.CreateRenderTarget` 创建，`Renderer.Draw(renderables, target)` 渲染进它，之后可作普通纹理（`ITexture`）采样（编辑器视口即用此呈现）。
 
 ---
 
@@ -415,6 +440,7 @@ public sealed class Texture2D : ITexture, IDisposable { public int Width { get; 
 | `Load<T>(path)` | 同步加载，带引用计数，同路径复用 |
 | `LoadAsync<T>(path)` | 异步加载（后台线程包装同步） |
 | `Unload(path)` | 释放一次引用，归零才真正释放 |
+| `GetPath(resource)` | 反向查询某已缓存资源的加载路径（未缓存则 null），供场景序列化把纹理句柄还原为路径 |
 | `event ResourceChanged` | 资源变更/热重载触发点（M3 落地） |
 
 ### 10.2 资源加载器
@@ -425,6 +451,26 @@ public sealed class TextureLoader : IResourceLoader<ITexture>   // StbImageSharp
 ```
 
 > 使用方式：`resources.Load<ITexture>(path)`（`TextureLoader` 已由 GameHost 注册）。
+
+### 10.3 场景序列化
+
+```csharp
+public sealed class SceneSerializer
+{
+    public SceneSerializer(ResourceManager resources);
+    public string Serialize(Scene scene);      // 活对象 → SceneFile → JSON
+    public Scene Deserialize(string json);     // JSON → SceneFile → 活对象 + 引用重连
+}
+
+public sealed class SceneLoader
+{
+    public SceneLoader(IFileSystem fileSystem, SceneSerializer serializer);
+    public Scene LoadScene(string path);
+    public void SaveScene(Scene scene, string path);
+}
+```
+
+> 场景文件为扁平 DTO（GUID 父子引用 + 组件类型全名 + 公开可写属性值）；纹理存相对路径，加载时经 `ResourceManager.Load<ITexture>` 重连。组件经反射重建（`AssemblyQualifiedName` + 公开可写属性），统一覆盖内置与自定义组件；`SpriteAnimator` 片段与 `Canvas` UI 树暂不覆盖。
 
 ---
 
