@@ -513,8 +513,8 @@ public sealed class SceneLoader
 ```csharp
 public sealed class AssetBundle
 {
-    public static void Pack(string rootDir, string outputPath);   // 打包目录 → .dubhe 文件
-    public static AssetBundle PackInMemory(string rootDir);        // 打包到内存（构建/测试用）
+    public static void Pack(string rootDir, string outputPath, Func<string, bool>? filter = null);   // 打包目录 → .dubhe 文件
+    public static AssetBundle PackInMemory(string rootDir, Func<string, bool>? filter = null);        // 打包到内存（构建/测试用）
     public static AssetBundle Load(string path);                   // 从包文件加载
     public IReadOnlyCollection<string> Paths { get; }              // 包内资源路径
     public bool Contains(string path);
