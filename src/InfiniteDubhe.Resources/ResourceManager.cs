@@ -50,6 +50,31 @@ public sealed class ResourceManager
     public string? GetPath(object resource)
         => _paths.TryGetValue(resource, out var path) ? path : null;
 
+    /// <summary>热重载单个资源（重新加载并替换缓存实例，释放旧实例，触发 <see cref="ResourceChanged"/>）。</summary>
+    public void Reload<T>(string path) where T : class
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(path);
+        if (!_cache.TryGetValue(path, out var entry)) return;
+
+        var newResource = GetLoader<T>().Load(path);
+        var old = entry.Resource;
+        entry.Resource = newResource;
+        _paths.Remove(old);
+        _paths[newResource] = path;
+
+        if (old is IDisposable disposable) disposable.Dispose();
+        ResourceChanged?.Invoke(path);
+    }
+
+    /// <summary>热重载所有已缓存且属于 <typeparamref name="T"/> 的资源。</summary>
+    public void ReloadAll<T>() where T : class
+    {
+        foreach (var path in _cache.Keys.ToArray())
+        {
+            if (_cache[path].Resource is T) Reload<T>(path);
+        }
+    }
+
     /// <summary>异步加载（M1：后台线程包装同步加载）。</summary>
     public Task<T> LoadAsync<T>(string path) where T : class
         => Task.Run(() => Load<T>(path));
