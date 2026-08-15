@@ -231,6 +231,31 @@ public static class Easing { public static float Apply(Ease ease, float t); }
 | `HeaderAttribute(label)` | 属性分组标题 |
 | `TooltipAttribute(text)` | 属性悬停提示 |
 
+### 4.11 Profiler（性能分析，M3）
+
+| 成员 | 说明 |
+|------|------|
+| `Enabled` | 是否开启采样（false 时零开销） |
+| `FrameTimeMs` | 当前帧总耗时（毫秒） |
+| `FixedUpdateTimeMs` / `UpdateTimeMs` / `RenderTimeMs` | 分阶段耗时（FixedUpdate 多次求和） |
+| `DrawCalls` | 本帧 Draw Call 数量（由 SpriteBatch 上报） |
+| `AllocatedBytes` | 本帧主线程 GC 分配字节数 |
+| `Fps` | 按帧耗时推算的 FPS |
+
+### 4.12 ObjectPool&lt;T&gt;（对象池，M3）
+
+```csharp
+public sealed class ObjectPool<T> where T : class
+{
+    public ObjectPool(Func<T> factory, Action<T>? onRent = null, Action<T>? onReturn = null);
+    public int Count { get; }
+    public T Rent();
+    public void Return(T item);
+}
+```
+
+> 复用实例避免每帧分配（对应 NFR-03）。
+
 ---
 
 ## 5. InfiniteDubhe.Engine
@@ -441,6 +466,8 @@ public sealed class RenderTarget2D : ITexture, IDisposable
 | `LoadAsync<T>(path)` | 异步加载（后台线程包装同步） |
 | `Unload(path)` | 释放一次引用，归零才真正释放 |
 | `GetPath(resource)` | 反向查询某已缓存资源的加载路径（未缓存则 null），供场景序列化把纹理句柄还原为路径 |
+| `Reload<T>(path)` | 热重载单个资源（重新加载并替换缓存实例，触发 `ResourceChanged`） |
+| `ReloadAll<T>()` | 热重载所有已缓存且属于该类型的资源 |
 | `event ResourceChanged` | 资源变更/热重载触发点（M3 落地） |
 
 ### 10.2 资源加载器
