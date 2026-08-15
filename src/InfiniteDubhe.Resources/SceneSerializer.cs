@@ -15,11 +15,13 @@ namespace InfiniteDubhe.Resources;
 public sealed class SceneSerializer
 {
     private readonly ResourceManager _resources;
+    private readonly IAssetGuidResolver? _guidResolver;
     private readonly JsonSerializerOptions _options;
 
-    public SceneSerializer(ResourceManager resources)
+    public SceneSerializer(ResourceManager resources, IAssetGuidResolver? guidResolver = null)
     {
         _resources = resources ?? throw new ArgumentNullException(nameof(resources));
+        _guidResolver = guidResolver;
         _options = new JsonSerializerOptions { WriteIndented = true };
         _options.Converters.Add(new Vector2JsonConverter());
         _options.Converters.Add(new ColorJsonConverter());
@@ -163,9 +165,17 @@ public sealed class SceneSerializer
             var value = prop.GetValue(component);
             if (value is ITexture texture)
             {
-                // 纹理存路径，加载时经 ResourceManager 重连。
+                // 纹理存 GUID + 路径（GUID 主引用，改名/移动后靠 GUID 重连；无解析器时退化为路径）。
                 var path = _resources.GetPath(texture);
-                result.Add(new PropertyValue { Name = prop.Name, Value = System.Text.Json.JsonSerializer.SerializeToElement(path, _options) });
+                if (_guidResolver is not null && path is not null)
+                {
+                    var reference = new AssetReference { Guid = _guidResolver.GetGuid(path), Path = path };
+                    result.Add(new PropertyValue { Name = prop.Name, Value = System.Text.Json.JsonSerializer.SerializeToElement(reference, typeof(AssetReference), _options) });
+                }
+                else
+                {
+                    result.Add(new PropertyValue { Name = prop.Name, Value = System.Text.Json.JsonSerializer.SerializeToElement(path, _options) });
+                }
             }
             else
             {
@@ -188,8 +198,19 @@ public sealed class SceneSerializer
 
             if (typeof(ITexture).IsAssignableFrom(prop.PropertyType))
             {
-                string? path = pv.Value.ValueKind == JsonValueKind.Null ? null : pv.Value.GetString();
-                prop.SetValue(component, path is null ? null : _resources.Load<ITexture>(path));
+                string? path = null;
+                if (pv.Value.ValueKind == JsonValueKind.Object)
+                {
+                    // 新格式：{ guid, path }，优先按 GUID 解析（改名/移动后仍能定位）。
+                    var reference = pv.Value.Deserialize<AssetReference>(_options);
+                    path = _guidResolver?.GetPath(reference.Guid) ?? reference.Path;
+                }
+                else if (pv.Value.ValueKind == JsonValueKind.String)
+                {
+                    // 旧格式：纯路径字符串。
+                    path = pv.Value.GetString();
+                }
+                prop.SetValue(component, string.IsNullOrEmpty(path) ? null : _resources.Load<ITexture>(path));
             }
             else
             {

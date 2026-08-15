@@ -118,6 +118,50 @@ public sealed class SceneSerializerTests
         Assert.Equal(once, twice);
     }
 
+    [Fact]
+    public void TextureReference_ResolvesByGuidAfterPathChange()
+    {
+        var resources = new ResourceManager();
+        resources.RegisterLoader<ITexture>(new FakeTextureLoader());
+        var resolver = new FakeGuidResolver();
+        var serializer = new SceneSerializer(resources, resolver);
+
+        var scene = new SceneType("Test");
+        var go = scene.CreateObject("A");
+        go.AddComponent<SpriteRenderer>().Texture = resources.Load<ITexture>("tex/a.png");
+
+        var json = serializer.Serialize(scene);
+
+        // 模拟资源改名：GUID 仍能解析到新路径。
+        resolver.SetPath(resolver.GetGuid("tex/a.png"), "tex/a_renamed.png");
+
+        var restored = serializer.Deserialize(json);
+        var sr = restored.RootObjects.Single().GetComponent<SpriteRenderer>()!;
+        Assert.NotNull(sr.Texture);
+        Assert.Equal("tex/a_renamed.png", resources.GetPath(sr.Texture)); // 经 GUID 解析到新路径
+    }
+
+    private sealed class FakeGuidResolver : IAssetGuidResolver
+    {
+        private readonly Dictionary<string, Guid> _pathToGuid = new();
+        private readonly Dictionary<Guid, string> _guidToPath = new();
+
+        public Guid GetGuid(string path)
+        {
+            if (!_pathToGuid.TryGetValue(path, out var guid))
+            {
+                guid = Guid.NewGuid();
+                _pathToGuid[path] = guid;
+                _guidToPath[guid] = path;
+            }
+            return guid;
+        }
+
+        public string? GetPath(Guid guid) => _guidToPath.TryGetValue(guid, out var p) ? p : null;
+
+        public void SetPath(Guid guid, string path) => _guidToPath[guid] = path;
+    }
+
     private sealed class FakeTexture : ITexture
     {
         public int Width => 32;

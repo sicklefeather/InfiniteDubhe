@@ -57,3 +57,10 @@ public sealed class PropertyValue
     public string Name { get; set; } = "";
     public JsonElement Value { get; set; }
 }
+
+/// <summary>资源引用（GUID + 路径）：场景/预制体里引用纹理等资源时，以 GUID 为主、路径为回退。</summary>
+public sealed class AssetReference
+{
+    public Guid Guid { get; set; }
+    public string Path { get; set; } = "";
+}
