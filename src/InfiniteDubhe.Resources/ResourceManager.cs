@@ -10,6 +10,7 @@ public sealed class ResourceManager
 {
     private readonly Dictionary<Type, object> _loaders = new();
     private readonly Dictionary<string, Entry> _cache = new(StringComparer.Ordinal);
+    private readonly Dictionary<object, string> _paths = new();
 
     /// <summary>资源热重载/变更触发点（M3 落地）。</summary>
     public event Action<string>? ResourceChanged;
@@ -41,8 +42,13 @@ public sealed class ResourceManager
         var loader = GetLoader<T>();
         var resource = loader.Load(path);
         _cache[path] = new Entry { Resource = resource, RefCount = 1 };
+        _paths[resource] = path;
         return resource;
     }
+
+    /// <summary>反向查询某已缓存资源的加载路径（未缓存则返回 null）。供场景序列化把纹理句柄还原为路径。</summary>
+    public string? GetPath(object resource)
+        => _paths.TryGetValue(resource, out var path) ? path : null;
 
     /// <summary>异步加载（M1：后台线程包装同步加载）。</summary>
     public Task<T> LoadAsync<T>(string path) where T : class
@@ -57,6 +63,7 @@ public sealed class ResourceManager
         if (--entry.RefCount > 0) return;
 
         _cache.Remove(path);
+        _paths.Remove(entry.Resource);
         if (entry.Resource is IDisposable disposable) disposable.Dispose();
         ResourceChanged?.Invoke(path);
     }

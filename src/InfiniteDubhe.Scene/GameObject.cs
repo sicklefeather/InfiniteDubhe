@@ -8,7 +8,7 @@ public sealed class GameObject
     public string Name { get; set; }
     public Transform Transform { get; }
     public Scene Scene { get; }
-    public Guid Id { get; }
+    public Guid Id { get; internal set; }
 
     private bool _active = true;
     /// <summary>激活开关（影响子节点）。</summary>
@@ -29,9 +29,17 @@ public sealed class GameObject
         scene.RegisterInternal(this);
     }
 
-    public T AddComponent<T>() where T : Component, new()
+    public T AddComponent<T>() where T : Component, new() => (T)AddComponent(typeof(T));
+
+    /// <summary>按运行时类型添加组件（供序列化等按 <see cref="Type"/> 重建组件时用）。</summary>
+    internal Component AddComponent(Type type)
     {
-        var component = new T { GameObject = this };
+        ArgumentNullException.ThrowIfNull(type);
+        if (!typeof(Component).IsAssignableFrom(type))
+            throw new ArgumentException($"{type.FullName} 不是 {nameof(Component)} 的子类。", nameof(type));
+
+        var component = (Component)Activator.CreateInstance(type)!;
+        component.GameObject = this;
         _components.Add(component);
         component.DoAwake();
         return component;

@@ -11,6 +11,7 @@
   <ItemGroup>
     <ProjectReference Include="../InfiniteDubhe.Core/InfiniteDubhe.Core.csproj" />
     <ProjectReference Include="../InfiniteDubhe.Platform/InfiniteDubhe.Platform.csproj" />
+    <ProjectReference Include="../InfiniteDubhe.Scene/InfiniteDubhe.Scene.csproj" />
   </ItemGroup>
 
   <ItemGroup>

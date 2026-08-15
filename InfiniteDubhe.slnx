@@ -18,5 +18,6 @@
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/InfiniteDubhe.Core.Tests/InfiniteDubhe.Core.Tests.csproj" />
+    <Project Path="tests/InfiniteDubhe.Resources.Tests/InfiniteDubhe.Resources.Tests.csproj" />
   </Folder>
 </Solution>
