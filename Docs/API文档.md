@@ -496,6 +496,7 @@ public sealed class SceneLoader
     public SceneLoader(IFileSystem fileSystem, SceneSerializer serializer);
     public Scene LoadScene(string path);
     public void SaveScene(Scene scene, string path);
+    public bool Exists(string path);
 }
 ```
 
