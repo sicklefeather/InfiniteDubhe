@@ -37,6 +37,7 @@ public sealed class FlappyBirdGame : Game
     private ITexture? _cloudTexture;
 
     private GameObject? _bird;
+    private SpriteAnimator? _animator;
     private readonly List<PipePair> _pipes = new();
     private readonly List<GameObject> _clouds = new();
 
@@ -56,11 +57,17 @@ public sealed class FlappyBirdGame : Game
     private AudioClip? _flapSfx;
     private AudioClip? _scoreSfx;
     private AudioClip? _hitSfx;
+    private AudioClip? _bgm;
 
     private float BirdX => Config.Width * BirdXFactor;
     private float GroundY => Config.Height - GroundHeight;
     private float MinGapCenter => 150f;
     private float MaxGapCenter => GroundY - 150f;
+
+    // 难度递增：随得分加快速度、缩小间隙、缩短生成间隔（各有限幅）。
+    private float CurrentPipeSpeed => MathF.Min(PipeSpeed + _score * 6f, 350f);
+    private float CurrentGap => MathF.Max(GapSize - _score * 4f, 120f);
+    private float CurrentPipeInterval => MathF.Max(PipeInterval - _score * 0.03f, 1.05f);
 
     public FlappyBirdGame(GameConfig config) : base(config) { }
 
@@ -75,7 +82,7 @@ public sealed class FlappyBirdGame : Game
         _renderer.ClearColor = Color.FromRgb(113, 197, 207); // 天空蓝
 
         _white = _renderer.CreateTexture(1, 1, new byte[] { 255, 255, 255, 255 });
-        _birdTexture = GenerateBird(_renderer);
+        _birdTexture = GenerateBirdSheet(_renderer);
         _pipeBodyTexture = GeneratePipeBody(_renderer);
         _pipeCapTexture = GeneratePipeCap(_renderer);
         _cloudTexture = GenerateCloud(_renderer);
@@ -85,6 +92,8 @@ public sealed class FlappyBirdGame : Game
         BuildUi();
         BuildAudio();
         SpawnClouds();
+
+        Audio.PlayBgm(_bgm!, 0.45f, 1.5f); // 循环 BGM，1.5s 淡入
 
         Log.Info("FlappyBird ready. Audio available: " + Audio.IsAvailable + ".");
     }
@@ -142,10 +151,13 @@ public sealed class FlappyBirdGame : Game
         _bird!.Transform.Position = new Vector2(BirdX, _birdY);
         _bird.Transform.RotationDeg = rotation;
 
+        // 上升时扑翅更快，下落时放慢。
+        if (_animator is not null) _animator.Speed = _birdVelocity < 0f ? 2.2f : 1f;
+
         _pipeSpawnTimer -= dt;
         if (_pipeSpawnTimer <= 0f)
         {
-            _pipeSpawnTimer = PipeInterval;
+            _pipeSpawnTimer = CurrentPipeInterval;
             SpawnPipe();
         }
 
@@ -204,8 +216,8 @@ public sealed class FlappyBirdGame : Game
     private void SpawnPipe()
     {
         float gapCenter = MinGapCenter + Random.Shared.NextSingle() * (MaxGapCenter - MinGapCenter);
-        float gapTop = gapCenter - GapSize * 0.5f;
-        float gapBottom = gapCenter + GapSize * 0.5f;
+        float gapTop = gapCenter - CurrentGap * 0.5f;
+        float gapBottom = gapCenter + CurrentGap * 0.5f;
         float x = Config.Width + 40f;
         float halfOverhang = (CapWidth - PipeWidth) * 0.5f;
 
@@ -240,7 +252,7 @@ public sealed class FlappyBirdGame : Game
 
     private void MovePipes(float dt)
     {
-        float dx = -PipeSpeed * dt;
+        float dx = -CurrentPipeSpeed * dt;
         foreach (var pair in _pipes)
         {
             pair.X += dx;
@@ -300,8 +312,12 @@ public sealed class FlappyBirdGame : Game
         _bird.Transform.Position = new Vector2(BirdX, _birdY);
         var sr = _bird.AddComponent<SpriteRenderer>();
         sr.Texture = _birdTexture;
-        sr.Origin = new Vector2(20f, 14f); // 纹理 40×28 中心，绕中心旋转
+        sr.Origin = new Vector2(20f, 14f); // 单帧 40×28 中心，绕中心旋转
         sr.Layer = 2;
+
+        _animator = _bird.AddComponent<SpriteAnimator>();
+        _animator.AddClip(SpriteAnimationClip.FromRow("flap", new Rectangle(0, 0, 40, 28), 3, 10, true));
+        _animator.Play("flap");
     }
 
     private void BuildGround()
@@ -396,20 +412,27 @@ public sealed class FlappyBirdGame : Game
         _flapSfx = MakeSweep(400f, 900f, 0.12f);
         _scoreSfx = MakeTone(880f, 0.15f, 5f);
         _hitSfx = MakeTone(140f, 0.35f, 10f);
+        _bgm = MakeBgm();
     }
 
     // ---- 程序化素材 ----
 
-    private static ITexture GenerateBird(Renderer renderer)
+    private static ITexture GenerateBirdSheet(Renderer renderer)
     {
-        const int w = 40, h = 28;
-        var rgba = new byte[w * h * 4];
-        FillEllipse(rgba, w, h, 18f, 14f, 14f, 12f, 250, 205, 40, 255); // 身体
-        FillEllipse(rgba, w, h, 21f, 10f, 8f, 5f, 240, 190, 30, 255);   // 翅膀
-        FillEllipse(rgba, w, h, 27f, 10f, 5f, 5f, 255, 255, 255, 255);  // 眼白
-        FillEllipse(rgba, w, h, 29f, 10f, 2.2f, 2.2f, 20, 20, 20, 255); // 瞳孔
-        FillEllipse(rgba, w, h, 36f, 16f, 6f, 3.5f, 240, 120, 20, 255); // 喙
-        return renderer.CreateTexture(w, h, rgba);
+        const int frames = 3, w = 40, h = 28;
+        int sheetW = w * frames;
+        var rgba = new byte[sheetW * h * 4];
+        float[] wingY = { 8f, 12f, 16f }; // 翅膀 上 / 中 / 下
+        for (int f = 0; f < frames; f++)
+        {
+            int ox = f * w;
+            FillEllipse(rgba, sheetW, h, ox + 18f, 14f, 14f, 12f, 250, 205, 40, 255); // 身体
+            FillEllipse(rgba, sheetW, h, ox + 21f, wingY[f], 8f, 5f, 240, 190, 30, 255); // 翅膀
+            FillEllipse(rgba, sheetW, h, ox + 27f, 10f, 5f, 5f, 255, 255, 255, 255);     // 眼白
+            FillEllipse(rgba, sheetW, h, ox + 29f, 10f, 2.2f, 2.2f, 20, 20, 20, 255);    // 瞳孔
+            FillEllipse(rgba, sheetW, h, ox + 36f, 16f, 6f, 3.5f, 240, 120, 20, 255);    // 喙
+        }
+        return renderer.CreateTexture(sheetW, h, rgba);
     }
 
     private static ITexture GeneratePipeBody(Renderer renderer)
@@ -475,6 +498,30 @@ public sealed class FlappyBirdGame : Game
     }
 
     // ---- 音频生成 ----
+
+    private static AudioClip MakeBgm(int sampleRate = 22050)
+    {
+        float[] notes = { 261.63f, 329.63f, 392f, 523.25f, 392f, 329.63f, 349.23f, 293.66f };
+        const float noteDuration = 0.5f;
+        int total = (int)(sampleRate * notes.Length * noteDuration);
+        float loopLength = notes.Length * noteDuration;
+        var samples = new short[total];
+        for (int i = 0; i < total; i++)
+        {
+            float t = i / (float)sampleRate;
+            int idx = Math.Min((int)(t / noteDuration), notes.Length - 1);
+            float local = t - idx * noteDuration;
+            float freq = notes[idx];
+
+            float attack = MathF.Min(1f, local * 20f);
+            float env = attack * MathF.Exp(-2.5f * local);
+            // 首尾淡入淡出，保证循环无缝无爆音。
+            float master = MathF.Min(Math.Clamp(t / 0.1f, 0f, 1f), Math.Clamp((loopLength - t) / 0.1f, 0f, 1f));
+            float v = MathF.Sin(2f * MathF.PI * freq * t) * 0.7f + MathF.Sin(2f * MathF.PI * freq * 2f * t) * 0.3f;
+            samples[i] = (short)(v * env * master * 6000f);
+        }
+        return AudioClip.Create(samples, sampleRate, 1);
+    }
 
     private static AudioClip MakeTone(float frequency, float seconds, float decay, int sampleRate = 22050)
     {
