@@ -77,6 +77,57 @@ public sealed class SceneSerializer
         return scene;
     }
 
+    /// <summary>序列化单个对象及其子孙为 JSON（供编辑器删除对象的撤销快照等用）。</summary>
+    public string SerializeSubtree(GameObject root)
+    {
+        ArgumentNullException.ThrowIfNull(root);
+        var file = new SceneFile { Name = root.Name };
+
+        var queue = new Queue<(GameObject go, Guid? parentId)>();
+        queue.Enqueue((root, null));
+        while (queue.Count > 0)
+        {
+            var (go, parentId) = queue.Dequeue();
+            file.Objects.Add(ToData(go, parentId));
+            foreach (var child in go.Transform.Children) queue.Enqueue((child.Owner, go.Id));
+        }
+
+        return System.Text.Json.JsonSerializer.Serialize(file, _options);
+    }
+
+    /// <summary>把子树 JSON 还原到指定场景（挂到 <paramref name="parent"/> 下），返回子树根对象。</summary>
+    public GameObject DeserializeSubtree(string json, SceneType scene, GameObject? parent)
+    {
+        var file = System.Text.Json.JsonSerializer.Deserialize<SceneFile>(json, _options)
+            ?? throw new InvalidOperationException("子树反序列化结果为空。");
+
+        var byId = new Dictionary<Guid, GameObject>();
+        foreach (var data in file.Objects)
+        {
+            var go = scene.CreateObject(data.Name);
+            go.Id = data.Id;
+            go.Active = data.Active;
+            go.Transform.Position = data.Transform.Position;
+            go.Transform.RotationDeg = data.Transform.RotationDeg;
+            go.Transform.Scale = data.Transform.Scale;
+
+            foreach (var cd in data.Components)
+                RestoreComponent(go, cd);
+
+            byId[data.Id] = go;
+        }
+
+        foreach (var data in file.Objects)
+        {
+            if (data.ParentId is Guid pid && byId.TryGetValue(pid, out var p))
+                byId[data.Id].Transform.SetParent(p.Transform);
+        }
+
+        var root = byId.Values.First(o => o.Transform.Parent is null);
+        if (parent is not null) root.Transform.SetParent(parent.Transform);
+        return root;
+    }
+
     private GameObjectData ToData(GameObject go, Guid? parentId)
     {
         var data = new GameObjectData
