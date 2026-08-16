@@ -29,6 +29,9 @@ public sealed class SceneLoader
     /// <summary>指定路径的场景文件是否存在。</summary>
     public bool Exists(string path) => _fileSystem.Exists(path);
 
+    /// <summary>把场景序列化为 JSON 文本（不落盘），供编辑器做脏状态比对。</summary>
+    public string Serialize(SceneType scene) => _serializer.Serialize(scene);
+
     public void SaveScene(SceneType scene, string path)
     {
         ArgumentNullException.ThrowIfNull(scene);
