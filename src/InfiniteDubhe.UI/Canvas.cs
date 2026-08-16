@@ -86,9 +86,13 @@ public sealed class Canvas : Component, IRenderable
     private void UpdateLayout()
     {
         var size = ScreenSize;
+        // UI 以「相机视野左上角」为原点布局（屏幕空间）。相机中心 = 视野中心时原点即世界 (0,0)，
+        // 编辑器视口相机中心与视口尺寸可能不一致，故按相机实际视野换算，保证 UI 始终贴屏幕左上角。
+        var cam = _renderer!.Camera;
+        var topLeft = cam.Position - new Vector2(cam.ViewportWidth * 0.5f, cam.ViewportHeight * 0.5f);
         foreach (var root in _roots)
             if (root.Visible)
-                root.UpdateLayout(Vector2.Zero, size);
+                root.UpdateLayout(topLeft, size);
     }
 
     private void ProcessInput()
