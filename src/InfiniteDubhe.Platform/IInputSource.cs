@@ -22,6 +22,9 @@ public interface IInputSource
     /// <summary>本帧滚轮累计值（正值向上）。</summary>
     float MouseWheel { get; }
 
+    /// <summary>本帧输入的文本字符（供 UI 文本输入，如 ImGui 输入框）。</summary>
+    string TextInput { get; }
+
     /// <summary>每帧调用，推进瞬态（边沿触发）状态。</summary>
     void Update();
 }

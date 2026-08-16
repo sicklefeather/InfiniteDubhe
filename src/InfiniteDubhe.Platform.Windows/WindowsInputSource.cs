@@ -13,6 +13,7 @@ public sealed class WindowsInputSource : IInputSource, IDisposable
     private readonly HashSet<InfiniteDubhe.Core.MouseButton> _mousePressed = new();
     private Vector2 _mousePos;
     private float _mouseWheel;
+    private string _textInput = "";
     private IInputContext? _input;
 
     public WindowsInputSource(WindowsWindow window)
@@ -26,12 +27,14 @@ public sealed class WindowsInputSource : IInputSource, IDisposable
     public bool IsMouseButtonDown(InfiniteDubhe.Core.MouseButton button) => _mouseHeld.Contains(button);
     public bool IsMouseButtonPressed(InfiniteDubhe.Core.MouseButton button) => _mousePressed.Contains(button);
     public float MouseWheel => _mouseWheel;
+    public string TextInput => _textInput;
 
     public void Update()
     {
         _pressed.Clear();
         _mousePressed.Clear();
         _mouseWheel = 0f;
+        _textInput = "";
     }
 
     public void Dispose() => _input?.Dispose();
@@ -44,6 +47,7 @@ public sealed class WindowsInputSource : IInputSource, IDisposable
         {
             keyboard.KeyDown += OnKeyDown;
             keyboard.KeyUp += OnKeyUp;
+            keyboard.KeyChar += (_, c) => _textInput += c;
         }
 
         foreach (var mouse in _input.Mice)

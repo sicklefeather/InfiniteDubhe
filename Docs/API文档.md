@@ -282,7 +282,7 @@ public sealed class GameHost
 |------|---------|
 | `IWindow` | `Title/Width/Height/IsClosing`、`event Load/Resized/Closing`、`Initialize()`、`ProcessEvents()` |
 | `IGraphicsContext` | `Clear(Color)`、`SwapBuffers()`、`MakeCurrent()`、`Native`（后端句柄） |
-| `IInputSource` | `IsKeyDown/IsKeyPressed(Key)`、`MousePosition`、`IsMouseButtonDown/Pressed(MouseButton)`、`MouseWheel`、`Update()` |
+| `IInputSource` | `IsKeyDown/IsKeyPressed(Key)`、`MousePosition`、`IsMouseButtonDown/Pressed(MouseButton)`、`MouseWheel`、`TextInput`、`Update()` |
 | `IFileSystem` | `OpenRead(path)`、`Exists(path)`、`GetFullPath(relative)` |
 | `IClock` | `Tick()`、`TotalSeconds` |
 | `IPlatformBootstrap` | `CreateWindow/CreateGraphicsContext/CreateInput/CreateFileSystem/CreateClock` |
@@ -503,6 +503,7 @@ public sealed class SceneLoader
     public SceneLoader(IFileSystem fileSystem, SceneSerializer serializer);
     public Scene LoadScene(string path);
     public void SaveScene(Scene scene, string path);
+    public string Serialize(Scene scene);        // 序列化为 JSON 文本（不落盘，供编辑器脏检测比对）
     public bool Exists(string path);
 }
 ```
@@ -631,6 +632,7 @@ public readonly struct Collision2D { public Collider2D Other; public Rigidbody2D
 
 | 分组 | 成员 | 说明 |
 |------|------|------|
+| 标识 | `Name` | 元素名称（编辑器树中显示、可重命名；默认取类型名） |
 | 布局 | `Anchor` / `Pivot` / `Position` / `Size` | 锚点(父空间0–1) / 枢轴(自身0–1) / 像素偏移 / 尺寸 |
 | 布局 | `Layout`（`LayoutDirection`）/ `Spacing` / `Padding` | 流式排列（`None/Vertical/Horizontal`） |
 | 外观 | `Color` / `Visible` | 颜色 / 可见 |

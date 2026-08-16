@@ -24,6 +24,11 @@ public abstract class UIElement
 {
     private readonly List<UIElement> _children = new();
 
+    /// <summary>元素名称（编辑器树中显示，可重命名）。默认取运行时类型名。</summary>
+    public string Name { get; set; }
+
+    protected UIElement() => Name = GetType().Name;
+
     // ---- 布局 ----
     /// <summary>锚点（父空间归一化 0..1）。元素枢轴对齐到父元素内该点。</summary>
     public Vector2 Anchor { get; set; }
