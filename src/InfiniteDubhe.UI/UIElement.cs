@@ -96,6 +96,15 @@ public abstract class UIElement
         return child;
     }
 
+    /// <summary>在指定位置插入子元素（供编辑器拖拽排序 / 撤销恢复位置）。越界则夹到末尾。</summary>
+    public void InsertChild(int index, UIElement child)
+    {
+        ArgumentNullException.ThrowIfNull(child);
+        child.Parent?.RemoveChild(child);
+        child.Parent = this;
+        _children.Insert(Math.Clamp(index, 0, _children.Count), child);
+    }
+
     public bool RemoveChild(UIElement child)
     {
         if (!_children.Remove(child)) return false;

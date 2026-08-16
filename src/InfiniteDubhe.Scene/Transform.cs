@@ -42,6 +42,13 @@ public sealed class Transform
         Parent?._children.Add(this);
     }
 
+    /// <summary>在同级中移动到指定索引（供编辑器拖拽排序 / 撤销恢复位置）。越界则夹到末尾。</summary>
+    public void SetSiblingIndex(int index)
+    {
+        if (Parent is null || !Parent._children.Remove(this)) return;
+        Parent._children.Insert(Math.Clamp(index, 0, Parent._children.Count), this);
+    }
+
     private bool IsAncestorOf(Transform t)
     {
         for (var p = t.Parent; p is not null; p = p.Parent)

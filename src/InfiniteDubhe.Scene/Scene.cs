@@ -19,6 +19,43 @@ public sealed class Scene
 
     internal void RegisterInternal(GameObject go) => _all.Add(go);
 
+    /// <summary>获取对象在同级中的索引（根级按根列表，子级按父级子列表）。</summary>
+    internal int GetSiblingIndex(GameObject go)
+    {
+        if (go.Transform.Parent is not null)
+        {
+            var children = go.Transform.Parent.Children;
+            for (int i = 0; i < children.Count; i++)
+                if (ReferenceEquals(children[i], go.Transform)) return i;
+            return 0;
+        }
+        var roots = _all.Where(o => o.Transform.Parent is null).ToList();
+        for (int i = 0; i < roots.Count; i++)
+            if (ReferenceEquals(roots[i], go)) return i;
+        return 0;
+    }
+
+    /// <summary>把对象移动到同级中的指定索引（根级重排 _all，子级重排父级子列表）。</summary>
+    internal void SetSiblingIndex(GameObject go, int index)
+    {
+        if (go.Transform.Parent is not null)
+        {
+            go.Transform.SetSiblingIndex(index);
+            return;
+        }
+
+        var roots = _all.Where(o => o.Transform.Parent is null).ToList();
+        int from = roots.IndexOf(go);
+        if (from < 0) return;
+        int to = Math.Clamp(index, 0, roots.Count - 1);
+        if (from == to) return;
+
+        _all.Remove(go);
+        int anchor = _all.IndexOf(roots[to]);
+        if (to > from) anchor++;
+        _all.Insert(Math.Clamp(anchor, 0, _all.Count), go);
+    }
+
     internal void DestroyDeferred(GameObject go)
     {
         if (!_pendingDestroy.Contains(go)) _pendingDestroy.Add(go);

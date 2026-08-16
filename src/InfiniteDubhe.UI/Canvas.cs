@@ -57,6 +57,13 @@ public sealed class Canvas : Component, IRenderable
         return element;
     }
 
+    /// <summary>在指定位置插入根元素（供编辑器拖拽排序 / 撤销恢复位置）。越界则夹到末尾。</summary>
+    public void InsertRoot(int index, UIElement element)
+    {
+        ArgumentNullException.ThrowIfNull(element);
+        _roots.Insert(Math.Clamp(index, 0, _roots.Count), element);
+    }
+
     /// <summary>移除根元素。</summary>
     public bool Remove(UIElement element) => _roots.Remove(element);
 
