@@ -72,6 +72,8 @@ public sealed class Canvas : Component, IRenderable
         if (_renderer is null) return;
         UpdateLayout();
         ProcessInput();
+        foreach (var root in _roots)
+            root.UpdateTree();
     }
 
     public void Submit(ICollection<SpriteDrawCommand> commands)

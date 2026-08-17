@@ -174,20 +174,37 @@ public abstract class UIElement
 
     /// <summary>用白色纹理按当前矩形与 <see cref="Color"/> 绘制实心矩形（面板/按钮背景等）。</summary>
     protected void SubmitSolid(ICollection<SpriteDrawCommand> commands, ITexture white, int layer, float depth)
+        => SubmitRect(commands, white, layer, depth, ComputedPosition, ComputedSize, Color);
+
+    /// <summary>在指定位置按指定尺寸与颜色绘制实心矩形（控件内部子区域：边框/填充/手柄/选项等）。</summary>
+    protected void SubmitRect(ICollection<SpriteDrawCommand> commands, ITexture white, int layer, float depth,
+        Vector2 position, Vector2 size, Color color)
     {
         commands.Add(new SpriteDrawCommand
         {
             Texture = white,
             SourceRect = new Rectangle(0, 0, 1, 1),
-            Position = ComputedPosition,
+            Position = position,
             Rotation = 0f,
             Origin = Vector2.Zero,
-            Scale = ComputedSize,
-            Color = Color,
+            Scale = size,
+            Color = color,
             Effects = SpriteEffects.None,
             Layer = layer,
             LayerDepth = depth,
         });
+    }
+
+    // ---- 每帧逻辑（由 Canvas 驱动） ----
+    /// <summary>每帧逻辑（Canvas 在输入处理后驱动）。覆盖以实现持续交互（如滑杆拖拽）。</summary>
+    protected virtual void OnUpdate() { }
+
+    internal void UpdateTree()
+    {
+        if (!Visible) return;
+        OnUpdate();
+        foreach (var child in _children)
+            child.UpdateTree();
     }
 
     // ---- 交互（由 Canvas 驱动） ----
