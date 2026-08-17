@@ -248,6 +248,51 @@ public sealed class SandboxGame : Game
         right.AddChild(new Text("Image (sprite sheet)", 1.5f));
         right.AddChild(new Image { Texture = _coinSheet, Size = new Vector2(232f, 58f) });
 
+        // 中部面板：UI 控件演示（勾选框 / 滑杆 / 进度条 / 下拉框）。
+        var controls = canvas.Add(new Panel
+        {
+            Size = new Vector2(260f, 240f),
+            Anchor = new Vector2(0.5f, 0f),
+            Pivot = new Vector2(0.5f, 0f),
+            Position = new Vector2(0f, 70f),
+            Color = Color.FromRgb(22, 26, 40, 220),
+            Layout = LayoutDirection.Vertical,
+            Spacing = 10f,
+            Padding = new Vector2(14f, 14f),
+        });
+        controls.AddChild(new Text("UI Controls", 2f));
+
+        var checkRow = new Panel
+        {
+            Size = new Vector2(232f, 20f),
+            Color = Color.FromRgb(0, 0, 0, 0), // 透明容器：仅用于水平排列勾选框 + 标签。
+            Layout = LayoutDirection.Horizontal,
+            Spacing = 8f,
+        };
+        var check = new Checkbox();
+        checkRow.AddChild(check);
+        checkRow.AddChild(new Text("Show progress", 1.5f));
+        controls.AddChild(checkRow);
+
+        var sliderText = new Text("Value: 0.50", 1.5f);
+        controls.AddChild(sliderText);
+        var slider = new Slider(0.5f) { Size = new Vector2(232f, 16f) };
+        controls.AddChild(slider);
+
+        var progress = new ProgressBar { Size = new Vector2(232f, 16f) };
+        controls.AddChild(progress);
+
+        var dropdown = new Dropdown(new[] { "Low", "Medium", "High" }) { Size = new Vector2(232f, 32f) };
+        controls.AddChild(dropdown);
+
+        // 交互联动：滑杆驱动进度条与数值文本，勾选框控制进度条显隐。
+        slider.ValueChanged += s =>
+        {
+            sliderText.Content = $"Value: {s.Value:0.00}";
+            progress.Progress = s.Value;
+        };
+        check.ValueChanged += c => progress.Visible = c.Checked;
+
         _statusText = canvas.Add(new Text("Bodies: 0", 1.5f)
         {
             Anchor = new Vector2(0f, 1f),
