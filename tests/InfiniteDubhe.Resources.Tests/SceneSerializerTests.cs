@@ -52,12 +52,12 @@ public sealed class SceneSerializerTests
         bc.Friction = 0.5f;
         bc.IsSensor = true;
 
-        // 往返。
+        // 往返（场景名不入 JSON，由调用方命名——如文件名）。
         var json = serializer.Serialize(scene);
-        var restored = serializer.Deserialize(json);
+        var restored = serializer.Deserialize(json, "FromFile");
 
         // 场景名 + 根对象。
-        Assert.Equal(scene.Name, restored.Name);
+        Assert.Equal("FromFile", restored.Name);
         var restoredRoot = Assert.Single(restored.RootObjects);
         Assert.Equal(root.Id, restoredRoot.Id);
         Assert.Equal("Root", restoredRoot.Name);

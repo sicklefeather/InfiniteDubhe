@@ -19,11 +19,21 @@ public sealed class SceneLoader
         _serializer = serializer ?? throw new ArgumentNullException(nameof(serializer));
     }
 
-    public SceneType LoadScene(string path)
+    /// <summary>加载场景。<paramref name="name"/> 为场景名，默认取文件名；固定场景（如全局场景）可显式指定。</summary>
+    public SceneType LoadScene(string path, string? name = null)
     {
         using var stream = _fileSystem.OpenRead(path);
         using var reader = new StreamReader(stream);
-        return _serializer.Deserialize(reader.ReadToEnd());
+        return _serializer.Deserialize(reader.ReadToEnd(), name ?? NameFromPath(path));
+    }
+
+    /// <summary>场景名 = 文件名（剥掉 .json 与约定的 .scene 后缀：global.scene.json → global）。</summary>
+    private static string NameFromPath(string path)
+    {
+        var name = Path.GetFileNameWithoutExtension(path);
+        if (name.EndsWith(".scene", StringComparison.OrdinalIgnoreCase))
+            name = name[..^".scene".Length];
+        return name.Length == 0 ? "Scene" : name;
     }
 
     /// <summary>指定路径的场景文件是否存在。</summary>

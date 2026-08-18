@@ -12,9 +12,7 @@ public sealed class SceneFile
     /// <summary>格式版本，供未来迁移。</summary>
     public int Version { get; set; } = 1;
 
-    public string Name { get; set; } = "";
-
-    /// <summary>扁平对象列表（父子关系靠 <see cref="GameObjectData.ParentId"/>）。</summary>
+    /// <summary>扁平对象列表（父子关系靠 <see cref="GameObjectData.ParentId"/>）。场景名不落盘，加载时以文件名命名。</summary>
     public List<GameObjectData> Objects { get; set; } = new();
 }
 

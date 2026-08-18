@@ -33,7 +33,8 @@ public sealed class SceneSerializer
     public string Serialize(SceneType scene)
     {
         ArgumentNullException.ThrowIfNull(scene);
-        var file = new SceneFile { Name = scene.Name };
+        // 场景名不落盘：加载时由调用方以文件名命名（重命名场景 = 重命名文件）。
+        var file = new SceneFile();
 
         var queue = new Queue<(GameObject go, Guid? parentId)>();
         foreach (var root in scene.RootObjects) queue.Enqueue((root, null));
@@ -47,11 +48,12 @@ public sealed class SceneSerializer
         return System.Text.Json.JsonSerializer.Serialize(file, _options);
     }
 
-    public SceneType Deserialize(string json)
+    /// <summary>反序列化场景。<paramref name="name"/> 为场景名（文件名），不传则默认 "Scene"。</summary>
+    public SceneType Deserialize(string json, string? name = null)
     {
         var file = System.Text.Json.JsonSerializer.Deserialize<SceneFile>(json, _options)
             ?? throw new InvalidOperationException("场景反序列化结果为空。");
-        var scene = new SceneType(file.Name);
+        var scene = new SceneType(name ?? "Scene");
 
         // 1) 按列表顺序重建所有对象（含组件与变换），记录 GUID→对象 映射。
         var byId = new Dictionary<Guid, GameObject>();
@@ -84,7 +86,7 @@ public sealed class SceneSerializer
     public string SerializeSubtree(GameObject root)
     {
         ArgumentNullException.ThrowIfNull(root);
-        var file = new SceneFile { Name = root.Name };
+        var file = new SceneFile();
 
         var queue = new Queue<(GameObject go, Guid? parentId)>();
         queue.Enqueue((root, null));
