@@ -16,6 +16,7 @@
     <ProjectReference Include="../InfiniteDubhe.Input/InfiniteDubhe.Input.csproj" />
     <ProjectReference Include="../InfiniteDubhe.Resources/InfiniteDubhe.Resources.csproj" />
     <ProjectReference Include="../InfiniteDubhe.Audio/InfiniteDubhe.Audio.csproj" />
+    <ProjectReference Include="../InfiniteDubhe.UI/InfiniteDubhe.UI.csproj" />
   </ItemGroup>
 
 </Project>

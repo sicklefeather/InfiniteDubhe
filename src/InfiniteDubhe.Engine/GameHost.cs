@@ -3,8 +3,10 @@ using InfiniteDubhe.Platform;
 using InfiniteDubhe.Rendering;
 using InfiniteDubhe.Resources;
 using InfiniteDubhe.Scene;
+using InfiniteDubhe.UI;
 using AudioFacade = InfiniteDubhe.Audio.Audio;
 using InputFacade = InfiniteDubhe.Input.Input;
+using SceneType = InfiniteDubhe.Scene.Scene;
 
 namespace InfiniteDubhe.Engine;
 
@@ -74,6 +76,9 @@ public sealed class GameHost
                 var dt = Math.Min(clock.Tick(), game.Config.MaxDeltaTime);
                 Time.AdvanceFrame(dt);
 
+                // 场景反序列化/运行期新建的 Canvas 需注入 Renderer 才能布局、渲染与交互（幂等）。
+                EnsureCanvasesInitialized(sceneManager, renderer);
+
                 // 固定步长累积（缩放，TimeScale = 0 时暂停）。
                 accumulator += Time.ScaledDeltaTime;
                 var iterations = 0;
@@ -120,6 +125,33 @@ public sealed class GameHost
             (graphics as IDisposable)?.Dispose();
             (input as IDisposable)?.Dispose();
             (window as IDisposable)?.Dispose();
+        }
+    }
+
+    /// <summary>为尚未初始化的 Canvas 注入 Renderer（生成白纹理与字体图集），否则 Canvas.Submit/Update 会静默跳过（编辑器在视口渲染前做同样处理）。</summary>
+    private static void EnsureCanvasesInitialized(SceneManager scenes, Renderer renderer)
+    {
+        EnsureSceneCanvases(scenes.Global, renderer);
+        EnsureSceneCanvases(scenes.Current, renderer);
+    }
+
+    private static void EnsureSceneCanvases(SceneType? scene, Renderer renderer)
+    {
+        if (scene is null) return;
+        foreach (var go in EnumerateObjects(scene))
+            if (go.TryGetComponent<Canvas>(out var canvas) && canvas is not null && canvas.Font is null)
+                canvas.Initialize(renderer);
+    }
+
+    private static IEnumerable<GameObject> EnumerateObjects(SceneType scene)
+    {
+        var stack = new Stack<GameObject>(scene.RootObjects);
+        while (stack.Count > 0)
+        {
+            var go = stack.Pop();
+            yield return go;
+            foreach (var child in go.Transform.Children)
+                stack.Push(child.Owner);
         }
     }
 
