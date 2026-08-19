@@ -8,7 +8,8 @@ public sealed class Scene
     private readonly List<GameObject> _all = new();
     private readonly List<GameObject> _pendingDestroy = new();
 
-    public string Name { get; }
+    /// <summary>场景名。不入 JSON：加载时以文件名命名，保存后同步为文件名（重命名场景 = 重命名文件）。</summary>
+    public string Name { get; set; }
 
     /// <summary>根级对象（父为 null）。</summary>
     public IReadOnlyList<GameObject> RootObjects => _all.Where(o => o.Transform.Parent is null).ToArray();

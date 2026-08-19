@@ -27,8 +27,8 @@ public sealed class SceneLoader
         return _serializer.Deserialize(reader.ReadToEnd(), name ?? NameFromPath(path));
     }
 
-    /// <summary>场景名 = 文件名（剥掉 .json 与约定的 .scene 后缀：global.scene.json → global）。</summary>
-    private static string NameFromPath(string path)
+    /// <summary>场景名 = 文件名（剥掉 .json 与约定的 .scene 后缀：global.scene.json → global）。加载与编辑器保存后命名共用此规则。</summary>
+    public static string NameFromPath(string path)
     {
         var name = Path.GetFileNameWithoutExtension(path);
         if (name.EndsWith(".scene", StringComparison.OrdinalIgnoreCase))
