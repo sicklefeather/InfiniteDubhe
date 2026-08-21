@@ -3,41 +3,17 @@
 > 文档版本：M3
 > 更新日期：2026-08-22
 > 对应代码：M0–M3 全部落地（含其后引擎侧增量：UI 新控件、场景命名约定、GameHost 自动初始化 Canvas 等）
-> 前置文档：`需求文档.md`、`设计文档.md`
+> 前置文档：`需求文档.md`、`设计文档.md`、`使用文档.md`
 
-本文档是**已实现代码**的公开 API 参考，按程序集（命名空间）组织。粒度到「类型 + 公开成员 + 一句话说明」，不含内部实现。与 `设计文档.md` 的差异以**代码为准**。
+本文档是**已实现代码**的公开 API 参考，按程序集（命名空间）组织。粒度到「类型 + 公开成员 + 一句话说明」，不含内部实现，也不含教程与示例代码——上手与各子系统的用法见 `使用文档.md`。与 `设计文档.md` 的差异以**代码为准**。
 
 ---
 
-## 1. 快速上手
+## 1. 导读
 
-一个最小可运行的游戏：
-
-```csharp
-using InfiniteDubhe.Core;
-using InfiniteDubhe.Engine;
-using InfiniteDubhe.Platform.Windows;
-
-var config = new GameConfig { Title = "Hello", Width = 800, Height = 600 };
-var host = new GameHost(new WindowsPlatformBootstrap());
-host.Run(new MyGame(config));
-
-sealed class MyGame : Game
-{
-    public MyGame(GameConfig config) : base(config) { }
-
-    protected override void LoadContent()
-    {
-        // GetService<T>() 解析子系统：SceneManager / ResourceManager / Renderer
-        var scene = new Scene("Main");
-        GetService<SceneManager>()!.Load(scene);
-        scene.CreateObject("Player"); // AddComponent<T>() 挂组件
-    }
-}
-```
-
-- 生命周期钩子（`Initialize` / `LoadContent` / `Update` / `FixedUpdate` / `Render` / `UnloadContent` / `Shutdown`）由 `GameHost` 驱动。
-- 子系统访问：`GetService<SceneManager>()`、`GetService<ResourceManager>()`、`GetService<Renderer>()`。
+- **怎么查**：§2 程序集总览定位到程序集 → §4–§13 逐程序集列类型与成员；全局约定（坐标系/角度/生命周期/时间/门面）见 §3。
+- **怎么用**：快速上手、各子系统任务示例见 `使用文档.md`。
+- **怎么设计**：模块划分与依赖方向见 `设计文档.md`。
 
 ---
 
@@ -677,13 +653,4 @@ public sealed class BitmapFont
 
 > 内置 5×7 字体覆盖 ASCII 32–126；`Canvas.Font` 由 `Initialize` 自动构建。
 
----
-
-## 14. 示例
-
-| 项目 | 演示内容 |
-|------|---------|
-| `samples/Sandbox` | 全子系统：物理（重力/刚体/碰撞/射线）、音频、动画（帧动画+补间）、UI（控件/布局/事件，含勾选框/滑块/进度条/下拉框联动演示）、调试绘制 |
-| `samples/FlappyBird` | 完整小游戏：程序化素材、三态流程、扑翅帧动画、循环 BGM、难度递增、音效 |
-
-运行：`dotnet run --project samples/Sandbox` / `dotnet run --project samples/FlappyBird`。
+> 示例项目（`samples/Sandbox`、`samples/FlappyBird`）的演示内容与运行方式见 `使用文档.md` §2.2。
