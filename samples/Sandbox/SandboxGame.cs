@@ -282,8 +282,16 @@ public sealed class SandboxGame : Game
         var progress = new ProgressBar { Size = new Vector2(232f, 16f) };
         controls.AddChild(progress);
 
-        var dropdown = new Dropdown(new[] { "Low", "Medium", "High" }) { Size = new Vector2(232f, 32f) };
+        // 下拉框：Text-Value 选项——Text 显示，Value 逻辑值（未设置时回落到 Text）。
+        var dropdown = new Dropdown(new[]
+        {
+            new DropdownOption("Easy"),
+            new DropdownOption("Normal", "normal"),
+            new DropdownOption("Hard", "hard"),
+        }) { Size = new Vector2(232f, 32f) };
         controls.AddChild(dropdown);
+        var dropdownText = new Text("Difficulty: Easy (Easy)", 1.5f);
+        controls.AddChild(dropdownText);
 
         // 交互联动：滑杆驱动进度条与数值文本，勾选框控制进度条显隐。
         slider.ValueChanged += s =>
@@ -292,6 +300,8 @@ public sealed class SandboxGame : Game
             progress.Progress = s.Value;
         };
         check.ValueChanged += c => progress.Visible = c.Checked;
+        dropdown.SelectionChanged += (_, _) =>
+            dropdownText.Content = $"Difficulty: {dropdown.SelectedItem} ({dropdown.SelectedValue})";
 
         _statusText = canvas.Add(new Text("Bodies: 0", 1.5f)
         {

@@ -203,6 +203,36 @@ public sealed class SceneSerializerTests
         Assert.Equal(new Vector2(64f, 64f), restoredImage.Size);
     }
 
+    [Fact]
+    public void RoundTrip_PreservesDropdownTextValueOptions()
+    {
+        var resources = new ResourceManager();
+        resources.RegisterLoader<ITexture>(new FakeTextureLoader());
+        var serializer = new SceneSerializer(resources);
+
+        var scene = new SceneType("UI");
+        var canvas = scene.CreateObject("Canvas").AddComponent<Canvas>();
+        canvas.Add(new Dropdown(new[]
+        {
+            new DropdownOption("Easy"),                    // Value 未设置 → 有效值回落到 Text
+            new DropdownOption("Normal", "normal"),
+            new DropdownOption("Hard", "hard"),
+        }) { SelectedIndex = 2 });
+
+        var restored = serializer.Deserialize(serializer.Serialize(scene));
+        var dropdown = Assert.IsType<Dropdown>(
+            Assert.Single(Assert.IsType<Canvas>(Assert.Single(restored.RootObjects).GetComponent<Canvas>()).Roots));
+
+        Assert.Equal(3, dropdown.Items.Count);
+        Assert.Equal("Easy", dropdown.Items[0].Text);
+        Assert.Null(dropdown.Items[0].Value);
+        Assert.Equal("Easy", dropdown.Items[0].EffectiveValue);      // Value 未设置回落 Text
+        Assert.Equal("normal", dropdown.Items[1].EffectiveValue);
+        Assert.Equal(2, dropdown.SelectedIndex);
+        Assert.Equal("Hard", dropdown.SelectedItem);                 // 显示用 Text
+        Assert.Equal("hard", dropdown.SelectedValue);                // 逻辑值
+    }
+
     private sealed class FakeGuidResolver : IAssetGuidResolver
     {
         private readonly Dictionary<string, Guid> _pathToGuid = new();
