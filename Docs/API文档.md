@@ -631,7 +631,7 @@ public readonly struct Collision2D { public Collider2D Other { get; } public Rig
 | `Button` | `Label`、`TextColor`、`FontScale`、`BackgroundColor/HoverColor/PressedColor` | 背景随状态变色 + 居中文本；`Interactable=true` |
 | `Image` | `Texture` | 纹理（拉伸到 `Size`）；无纹理时退化为纯色 |
 | `Panel` | （继承 UIElement） | 纯色矩形（背景/容器） |
-| `Checkbox` | `Checked`、`BackgroundColor/BorderColor/HoverColor/CheckColor`、`event ValueChanged` | 勾选框（默认 20×20，`Interactable=true`，点击切换并触发事件，勾选时以内置字体画 "x"） |
+| `Checkbox` | `Checked`、`BackgroundColor/BorderColor/HoverColor/CheckColor`、`event ValueChanged` | 勾选框（默认 20×20，`Interactable=true`，点击切换并触发事件，勾选时以两段线段绘制 “✓”） |
 | `Slider` | `Value`(0–1)、`TrackColor/FillColor/KnobColor`、`event ValueChanged` | 滑块（默认 200×16，`Interactable=true`，点击/按住拖动改值，拖拽期间持续触发） |
 | `ProgressBar` | `Progress`(0–1)、`BackgroundColor/FillColor` | 进度条（默认 200×16，非交互） |
 | `Dropdown` | `Items`（`List<DropdownOption>`）、`SelectedIndex/SelectedItem/SelectedValue`、`SetItems(...)`、`event SelectionChanged(int)` | 下拉框（默认 160×32，点击展开选项列表；选项为 **Text-Value** 形式，选项行为自动生成子元素，序列化跳过） |
