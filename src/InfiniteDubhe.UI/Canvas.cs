@@ -102,15 +102,16 @@ public sealed class Canvas : Component, IRenderable
             return;
         }
 
-        // 设计分辨率模式：先收集设计像素坐标的指令，统一变换到布局空间
-        //（位置平移+缩放；尺寸 Scale 与旋转/缩放枢轴 Origin 同倍缩放，几何关系不变）。
+        // 设计分辨率模式：先收集含原点的设计坐标指令，统一变换到布局空间。注意元素坐标已含
+        // LayoutOrigin（布局以它为锚），换算须绕原点缩放：origin + (pos − origin) × scale，
+        // 直接 origin + pos × scale 会把原点叠加两次（UI 随相机漂移）。
         _scaledBuffer.Clear();
         foreach (var root in _roots)
             root.Submit(_scaledBuffer, _white, _font, SortingLayer, ref _drawOrder);
         foreach (var command in _scaledBuffer)
         {
             var scaled = command;
-            scaled.Position = LayoutOrigin + scaled.Position * LayoutScale;
+            scaled.Position = LayoutOrigin + (scaled.Position - LayoutOrigin) * LayoutScale;
             scaled.Scale *= LayoutScale;
             scaled.Origin *= LayoutScale;
             commands.Add(scaled);
@@ -146,10 +147,10 @@ public sealed class Canvas : Component, IRenderable
 
     private void ProcessInput()
     {
-        // 命中测试用设计像素坐标：把窗口鼠标按布局原点与缩放换算（沿用「窗口≈布局空间」的既有近似）。
+        // 命中测试用含原点的设计坐标：绕原点换算（元素 ComputedPosition 已含 LayoutOrigin）。
         var point = InputFacade.MousePosition;
         if (LayoutScale != 1f)
-            point = (point - LayoutOrigin) / LayoutScale;
+            point = LayoutOrigin + (point - LayoutOrigin) / LayoutScale;
         var hovered = HitTest(point, _roots);
 
         if (!ReferenceEquals(hovered, _hovered))
