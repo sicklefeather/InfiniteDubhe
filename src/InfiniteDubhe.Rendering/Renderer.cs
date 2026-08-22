@@ -67,6 +67,7 @@ public sealed class Renderer : IDisposable
     {
         ArgumentNullException.ThrowIfNull(target);
         BindRenderTarget(target);
+        ClearRenderTarget(target, ClearColor); // 离屏目标须清屏，否则旧帧内容残留（移动时拖影）
         DrawCore(renderables);
     }
 
@@ -93,6 +94,13 @@ public sealed class Renderer : IDisposable
         _context.OMSetRenderTargets(1, ref rtv, ref Unsafe.NullRef<ID3D11DepthStencilView>());
         var viewport = new Viewport(0, 0, target.Width, target.Height, 0, 1);
         _context.RSSetViewports(1, in viewport);
+    }
+
+    private unsafe void ClearRenderTarget(RenderTarget2D target, Color color)
+    {
+        var rtv = target.Rtv;
+        Span<float> rgba = stackalloc float[4] { color.R, color.G, color.B, color.A };
+        _context.ClearRenderTargetView(rtv, ref rgba[0]);
     }
 
     public void Present() => _graphics.SwapBuffers();

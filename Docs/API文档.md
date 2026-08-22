@@ -370,7 +370,7 @@ public sealed class SpriteAnimator : Component
 | `CreateRenderTarget(width, height)` | 创建离屏渲染目标（编辑器视口等用） |
 | `Clear(color)` | 清屏 |
 | `Draw(IReadOnlyList<IRenderable>)` | 收集指令 → 批处理 → 绘制（到后备缓冲） |
-| `Draw(renderables, RenderTarget2D)` | 渲染到离屏目标（视口） |
+| `Draw(renderables, RenderTarget2D)` | 绑定并以 `ClearColor` 清屏后渲染到离屏目标（视口） |
 | `Present()` | 提交渲染帧 |
 
 ### 8.2 Camera
