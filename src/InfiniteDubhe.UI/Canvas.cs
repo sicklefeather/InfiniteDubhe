@@ -33,6 +33,19 @@ public sealed class Canvas : Component, IRenderable
     /// <summary>根元素。</summary>
     public IReadOnlyList<UIElement> Roots => _roots;
 
+    /// <summary>设计分辨率（设计像素）。设置后 UI 按该尺寸布局（元素坐标均为设计像素），
+    /// 整体等比缩放并居中适配当前视口（宽高比不同则留边）；
+    /// (0,0)（默认）表示禁用——直接按当前视口布局，兼容旧行为。</summary>
+    public Vector2 DesignSize { get; set; } = Vector2.Zero;
+
+    /// <summary>当前 UI 布局缩放（设计像素 → 布局像素；未设设计分辨率时恒为 1）。</summary>
+    public float LayoutScale { get; private set; } = 1f;
+
+    /// <summary>设计区域左上角（布局/世界坐标）。未设设计分辨率时即相机视野左上角。</summary>
+    public Vector2 LayoutOrigin { get; private set; }
+
+    private readonly List<SpriteDrawCommand> _scaledBuffer = new();
+
     private Vector2 ScreenSize => _renderer is null
         ? Vector2.Zero
         : new Vector2(_renderer.Camera.ViewportWidth, _renderer.Camera.ViewportHeight);
@@ -81,8 +94,27 @@ public sealed class Canvas : Component, IRenderable
         if (_renderer is null || _white is null) return;
         UpdateLayout();
         _drawOrder = 0;
+
+        if (LayoutScale == 1f)
+        {
+            foreach (var root in _roots)
+                root.Submit(commands, _white, _font, SortingLayer, ref _drawOrder);
+            return;
+        }
+
+        // 设计分辨率模式：先收集设计像素坐标的指令，统一变换到布局空间
+        //（位置平移+缩放；尺寸 Scale 与旋转/缩放枢轴 Origin 同倍缩放，几何关系不变）。
+        _scaledBuffer.Clear();
         foreach (var root in _roots)
-            root.Submit(commands, _white, _font, SortingLayer, ref _drawOrder);
+            root.Submit(_scaledBuffer, _white, _font, SortingLayer, ref _drawOrder);
+        foreach (var command in _scaledBuffer)
+        {
+            var scaled = command;
+            scaled.Position = LayoutOrigin + scaled.Position * LayoutScale;
+            scaled.Scale *= LayoutScale;
+            scaled.Origin *= LayoutScale;
+            commands.Add(scaled);
+        }
     }
 
     private void UpdateLayout()
@@ -92,14 +124,33 @@ public sealed class Canvas : Component, IRenderable
         // 编辑器视口相机中心与视口尺寸可能不一致，故按相机实际视野换算，保证 UI 始终贴屏幕左上角。
         var cam = _renderer!.Camera;
         var topLeft = cam.Position - new Vector2(cam.ViewportWidth * 0.5f, cam.ViewportHeight * 0.5f);
+        var layoutSize = size;
+
+        // 设计分辨率：按设计尺寸布局（根元素锚点相对设计尺寸），等比缩放居中适配视口。
+        if (DesignSize.X > 0f && DesignSize.Y > 0f)
+        {
+            LayoutScale = MathF.Min(size.X / DesignSize.X, size.Y / DesignSize.Y);
+            topLeft += (size - DesignSize * LayoutScale) * 0.5f; // 居中（宽高比不同则留边）
+            layoutSize = DesignSize;
+        }
+        else
+        {
+            LayoutScale = 1f;
+        }
+        LayoutOrigin = topLeft;
+
         foreach (var root in _roots)
             if (root.Visible)
-                root.UpdateLayout(topLeft, size);
+                root.UpdateLayout(topLeft, layoutSize);
     }
 
     private void ProcessInput()
     {
-        var hovered = HitTest(InputFacade.MousePosition, _roots);
+        // 命中测试用设计像素坐标：把窗口鼠标按布局原点与缩放换算（沿用「窗口≈布局空间」的既有近似）。
+        var point = InputFacade.MousePosition;
+        if (LayoutScale != 1f)
+            point = (point - LayoutOrigin) / LayoutScale;
+        var hovered = HitTest(point, _roots);
 
         if (!ReferenceEquals(hovered, _hovered))
         {

@@ -604,7 +604,10 @@ public readonly struct Collision2D { public Collider2D Other { get; } public Rig
 | `SortingLayer` | 渲染层（默认 1000，置顶于世界精灵） |
 | `Font` | 内置字体图集 |
 | `Roots` | 根元素（只读） |
-| `Initialize(Renderer)` | 生成纹理/字体（幂等；`GameHost` 每帧自动为未初始化的 Canvas 调用，运行期新建/反序列化的 Canvas 无需手动调用） |
+| `DesignSize` | **设计分辨率**（设计像素；默认 (0,0) 禁用）。设置后 UI 按该尺寸布局，整体等比缩放并居中适配当前视口（宽高比不同则留边）——不同窗口分辨率下 UI 等比缩放（类似 Unity Canvas Scaler） |
+| `LayoutScale` | 当前 UI 布局缩放（设计像素→布局像素；未设设计分辨率恒为 1） |
+| `LayoutOrigin` | 设计区域左上角（布局/世界坐标） |
+| `Initialize(Renderer)` | 生成纹理/字体（幂等；`GameHost` 每帧自动调用） |
 | `Add<T>(T)` / `AddRoot(UIElement)` / `InsertRoot(int, UIElement)` / `Remove(UIElement)` | 增删根元素（`AddRoot` 供按类型反射重建，`InsertRoot` 按索引插入供排序） |
 
 > 根元素布局原点为**相机视野左上角**（屏幕空间：`Camera.Position − 视口尺寸/2`），UI 始终贴屏幕左上角，不随相机平移。

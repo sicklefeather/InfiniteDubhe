@@ -151,6 +151,7 @@ public sealed class SceneSerializerTests
 
         var scene = new SceneType("UI");
         var canvas = scene.CreateObject("Canvas").AddComponent<Canvas>();
+        canvas.DesignSize = new Vector2(1920f, 1080f); // 设计分辨率（等比缩放适配视口）
 
         // 根 1：Panel（含 1 个 Text 子元素）。
         var panel = canvas.Add(new Panel
@@ -177,6 +178,7 @@ public sealed class SceneSerializerTests
 
         var restoredCanvas = Assert.IsType<Canvas>(Assert.Single(restored.RootObjects).GetComponent<Canvas>());
         Assert.Equal(3, restoredCanvas.Roots.Count);
+        Assert.Equal(new Vector2(1920f, 1080f), restoredCanvas.DesignSize);
 
         // Panel + 子 Text。
         var restoredPanel = Assert.IsType<Panel>(restoredCanvas.Roots[0]);
